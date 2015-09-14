@@ -1,0 +1,226 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <errno.h>
+#include "elf.h"
+#include "mips32.h"
+
+// https://www.cs.umd.edu/class/sum2003/cmsc311/Notes/Mips/format.html
+
+// Types
+#define uchar unsigned char
+
+// Signal codes
+#define SIG_HALT_PROGRAM 1
+
+// Error codes
+#define ERROR_IO_ERROR -1
+#define ERROR_INVALID_CONFIG -2
+#define ERROR_INVALID_ELF -3
+#define ERROR_UNKNOWN_OPCODE -4
+
+// Index of special registers
+#define r_at 1
+#define r_v0 2
+#define r_v1 3
+#define r_sp 29
+#define r_ra 31
+
+#define KB 1024
+
+// Registers
+uint32_t regs[32]; // General purpose
+uint32_t IP;       // Instruction pointer - PC fucking sucks
+size_t instr_cnt;  // Number of executed instructions
+
+// Memory
+size_t alloc;
+uchar* mem;
+
+int read_config_stream(FILE* f) {
+	for (int i = 8; i < 16; i++) {
+		if (fscanf(f, "%u", &regs[i]) != 1) {
+			if (errno == 0) return ERROR_INVALID_CONFIG;
+			return ERROR_IO_ERROR;
+		}
+	}
+        return 0;
+}
+
+void print_status() {
+	printf("Executed %zu instruction(s).\n", instr_cnt);
+	printf("pc = 0x%x\n", IP);
+        printf("at = 0x%x\n", regs[r_at]);
+        printf("v0 = 0x%x\n", regs[r_v0]);
+        printf("v1 = 0x%x\n", regs[r_v1]);
+        for(int i = 0; i < 8; i++) printf("t%d = 0x%x\n", i, regs[i+8]);
+        printf("sp = 0x%x\n", regs[r_sp]);
+        printf("ra = 0x%x\n", regs[r_ra]);
+}
+
+int read_config(const char *path) {
+	FILE* f = fopen(path, "r");
+	if (f == NULL) return ERROR_IO_ERROR;
+	if (read_config_stream(f) != 0) return ERROR_IO_ERROR;
+	return fclose(f);
+}
+
+int interp_r(uint32_t inst) {
+    uint32_t rs = GET_RS(inst);
+    uint32_t rt = GET_RT(inst);
+    uint32_t rd = GET_RD(inst);
+    printf("%08x\n", inst);
+    printf("Des: %u, Src1: %u Src2: %u\n", rs, rt, rd);
+    switch(GET_FUNCT(inst)) {
+        case FUNCT_JR:
+            break;
+        case FUNCT_SYSCALL:
+            return SIG_HALT_PROGRAM;
+        case FUNCT_ADDU:
+            regs[rd] = regs[rs] + regs[rt];
+            break;
+        case FUNCT_SUBU:
+            regs[rd] = regs[rs] - regs[rt];
+            break;
+        case FUNCT_AND:
+            regs[rd] = regs[rs] & regs[rt];
+            break;
+        case FUNCT_OR:
+            regs[rd] = regs[rs] | regs[rt];
+            break;
+        case FUNCT_NOR:
+            regs[rd] = !(regs[rs] | regs[rt]);
+            break;
+        case FUNCT_SLT:
+            regs[rd] = regs[rs] < regs[rt];
+            break;
+        case FUNCT_SLL:
+            regs[rd] = regs[rs] << GET_SHAMT(inst);
+            break;
+        case FUNCT_SRL:
+            regs[rd] = regs[rs] >> GET_SHAMT(inst);
+            break;
+    }
+    return 0;
+}
+
+/*
+ *
+#define OPCODE_R        (0x00)
+#define OPCODE_J        (0x02)
+#define OPCODE_JAL      (0x03)
+#define OPCODE_BEQ      (0x04)
+#define OPCODE_BNE      (0x05)
+#define OPCODE_ADDIU    (0x09)
+#define OPCODE_SLTI     (0x0A)
+#define OPCODE_ANDI     (0x0C)
+#define OPCODE_ORI      (0x0D)
+#define OPCODE_LUI      (0x0F)
+#define OPCODE_LW       (0x23)
+#define OPCODE_SW       (0x2B)
+*/
+
+int interp() {
+    int ret;
+    uint32_t inst;
+    while(1) {
+        inst = GET_BIGWORD(mem, IP);
+        printf("-> %u\n", GET_OPCODE(inst));
+        switch(GET_OPCODE(inst)) {
+            case OPCODE_R:
+                ret = interp_r(inst);
+                if (ret != 0) return ret;
+                break;
+            case OPCODE_J:
+                IP = GET_ADDRESS(inst);
+                break;
+            case OPCODE_JAL:
+                regs[r_ra] = IP + sizeof(uint32_t);
+                IP = GET_ADDRESS(inst);
+                break;
+            case OPCODE_BEQ:
+                if (GET_RS(inst) == GET_RT(inst)) IP += GET_IMM(inst);
+                break;
+            case OPCODE_BNE:
+                break;
+            case OPCODE_ADDIU:
+                regs[GET_RS(inst)] += GET_IMM(inst);
+                break;
+            case OPCODE_SLTI:
+                break;
+            case OPCODE_ANDI:
+                break;
+            case OPCODE_ORI:
+                break;
+            case OPCODE_LUI:
+                break;
+            case OPCODE_LW:
+                regs[GET_RS(inst)] = GET_BIGWORD(mem, GET_IMM(inst));
+                break;
+            case OPCODE_SW:
+                SET_BIGWORD(mem, GET_RS(inst), regs[GET_RT(inst)]);
+                break;
+            default:
+                return ERROR_UNKNOWN_OPCODE;
+        }
+        IP+=sizeof(uint32_t);
+        instr_cnt++;
+    }
+}
+
+int main(int argc, char* argv[]) {
+	int ret;
+
+	// Print usage
+	if (argc != 3) {
+		printf("Usage:\n");
+		printf("%s config_file mips_elf_file\n", argv[0]);
+		printf("Error codes:\n");
+		printf("IO ERROR       : %4d\n", ERROR_IO_ERROR);
+		printf("INVALID CONFIG : %4d\n", ERROR_INVALID_CONFIG);
+		exit(0);
+	}
+
+	// Read config file and print inital status
+	ret = read_config(argv[1]);
+	if (ret != 0) {
+            printf("Failed to load config, with code %d\n", ret);
+            exit(ret);
+        }
+
+        // Parse elf file (why the F does the elf parser write to stdout?)
+        alloc = KB*64;
+        mem = (uchar*) malloc(alloc);
+        while(1) {
+            ret = elf_dump(argv[2], &IP, mem, alloc);
+            if (ret == ELF_ERROR_OUT_OF_MEM) {
+                alloc *= 2;
+                mem = (uchar*) realloc(mem, alloc);
+                continue;
+            }
+            if (ret != 0) {
+                printf("Failed to parse elf file!");
+                exit(ERROR_INVALID_ELF);
+            }
+            break;
+        }
+
+        // Set stack pointer
+        regs[29] = alloc + MIPS_RESERVE - sizeof(uint32_t);
+        print_status();
+
+        //
+        ret = interp();
+        if (ret == ERROR_UNKNOWN_OPCODE) {
+            printf("Found unknown opcode!\n");
+            exit(ret);
+        } else  if (ret == SIG_HALT_PROGRAM) {
+            printf("Program has stopped (encountered a syscall)\n");
+        }
+        print_status();
+
+        printf("%s\n", mem);
+        printf("%u\n", IP);
+
+	return 0;
+}
