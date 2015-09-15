@@ -5,8 +5,8 @@
 #include "elf.h"
 #include "mips32.h"
 
-//DEBUG 
-#define DEBUG
+//DEBUG
+// #define DEBUG
 
 #ifdef DEBUG
     #define D
@@ -54,7 +54,7 @@ uchar* mem;
 // Advance the program counter
 static inline void advance_pc(int32_t offset) {
     PC  =  nPC;
-    nPC  += offset;
+    nPC += offset;
 }
 
 // Print simulation status
@@ -64,9 +64,14 @@ void print_status() {
     printf("at = 0x%x\n", regs[r_at]);
     printf("v0 = 0x%x\n", regs[r_v0]);
     printf("v1 = 0x%x\n", regs[r_v1]);
-    for(int i = 0; i < 8; i++) printf("t%d = 0x%x\n", i, regs[i+8]);
+    for (int i = 0; i < 8; i++) printf("t%d = 0x%x\n", i, regs[i+8]);
     printf("sp = 0x%x\n", regs[r_sp]);
     printf("ra = 0x%x\n", regs[r_ra]);
+}
+
+void print_all_registers() {
+    for (int i = 0; i < 4; i++) printf("a%d = 0x%x\n", i, regs[i+16]);
+    for (int i = 0; i < 8; i++) printf("s%d = 0x%x\n", i, regs[i+16]);
 }
 
 // Read config file stream
@@ -93,8 +98,6 @@ int interp_r(uint32_t inst) {
     uint32_t rs = GET_RS(inst);
     uint32_t rt = GET_RT(inst);
     uint32_t rd = GET_RD(inst);
-    D printf("%08x\n", inst);
-    D printf("Des: %u, Src1: %u Src2: %u\n", rs, rt, rd);
     switch(GET_FUNCT(inst)) {
         // Jump register
         case FUNCT_JR:
@@ -167,11 +170,11 @@ int interp() {
     while(1) {
         //debug
         D print_status();
-        D printf("Program counter = %x\n", PC); 
-        D if(PC == 0x40004c){ printf("reached\n"); exit(0);}   
-
+        D print_all_registers();
+        D printf("Program counter = %x\n", PC);
         inst = GET_BIGWORD(mem, PC);
         D printf("Instruction = %x\n", inst);
+        D getchar();
         switch(GET_OPCODE(inst)) {
             // R type instruction
             case OPCODE_R:
@@ -187,21 +190,15 @@ int interp() {
 
             // Jump and link
             case OPCODE_JAL:
-                D print_status();
-                D printf("%x\n", nPC);
                 regs[r_ra] = nPC + INSTRUCTION_SIZE;
                 PC = nPC;
                 nPC = (PC & MS_4B) | (GET_ADDRESS(inst) << 2);
-                D print_status();
-                D printf("%x\n", nPC);
                 break;
 
             // Branch on equal
             case OPCODE_BEQ:
-                if (GET_RS(inst) == GET_RT(inst)) {
+                if (regs[GET_RS(inst)] == regs[GET_RT(inst)]) {
                     advance_pc(GET_IMM(inst) << 2);
-                    D print_status();
-                    D exit(0);
                 } else {
                     advance_pc(INSTRUCTION_SIZE);
                 }
@@ -218,8 +215,7 @@ int interp() {
 
             // Add immediate unsigned (no overflow)
             case OPCODE_ADDIU:
-                D printf("ADDIU GET_IMM %x (%d)\n", GET_IMM(inst),(int32_t) (int16_t) GET_IMM(inst));
-                regs[GET_RS(inst)] += (int32_t) (int16_t) GET_IMM(inst);
+                regs[GET_RT(inst)] = regs[GET_RS(inst)] + ((int32_t) (int16_t) GET_IMM(inst));
                 advance_pc(INSTRUCTION_SIZE);
                 break;
 
@@ -249,14 +245,14 @@ int interp() {
 
             // Load word
             case OPCODE_LW:
-                regs[GET_RS(inst)] = GET_BIGWORD(mem, GET_IMM(inst));
+                D printf("Load word, from %x into register %d\n", regs[GET_RS(inst)] + GET_IMM(inst), GET_RT(inst));
+                regs[GET_RT(inst)] = GET_BIGWORD(mem, regs[GET_RS(inst)] + GET_IMM(inst));
                 advance_pc(INSTRUCTION_SIZE);
                 break;
 
             // Store word
             case OPCODE_SW:
-                D printf("Storing %x GET_RS %x GET_IMM %x\n", regs[GET_RT(inst)], regs[GET_RS(inst)], GET_IMM(inst));
-
+                D printf("Store word, %x into %x\n", regs[GET_RT(inst)], GET_RS(inst) + GET_IMM(inst));
                 SET_BIGWORD(mem, regs[GET_RS(inst)] + GET_IMM(inst), regs[GET_RT(inst)]);
                 advance_pc(INSTRUCTION_SIZE);
                 break;
@@ -293,7 +289,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Parse elf file (why the F does the elf parser write to stdout?)
-    alloc = KB*1024;
+    alloc = KB*64;
     mem = (uchar*) malloc(alloc);
     while(1) {
         ret = elf_dump(argv[2], &PC, mem, alloc);
@@ -323,13 +319,7 @@ int main(int argc, char* argv[]) {
     if (ret == ERROR_UNKNOWN_OPCODE) {
         printf("Found unknown opcode!\n");
         exit(ret);
-    } else  if (ret == SIG_HALT_PROGRAM) {
-        printf("Program has stopped (encountered a syscall)\n");
     }
     print_status();
-
-    printf("%s\n", mem);
-    printf("%u\n", PC);
-
     return 0;
 }
