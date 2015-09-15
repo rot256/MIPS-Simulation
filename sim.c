@@ -7,6 +7,10 @@
 
 //DEBUG
 // #define DEBUG
+//
+// TODO:
+//  FIX ADD WITHOUT OVERFLOW
+//  FAILS ARITHMETIC TEST
 
 #ifdef DEBUG
     #define D
@@ -168,12 +172,12 @@ int interp() {
     int ret;
     uint32_t inst;
     while(1) {
-        //debug
         D print_status();
         D print_all_registers();
-        D printf("Program counter = %x\n", PC);
+        D printf("PC     : %x\n", PC);
+        D printf("Next PC: %x\n", nPC);
         inst = GET_BIGWORD(mem, PC);
-        D printf("Instruction = %x\n", inst);
+        D printf("Inst   : %x\n", inst);
         D getchar();
         switch(GET_OPCODE(inst)) {
             // R type instruction
@@ -258,7 +262,6 @@ int interp() {
                 break;
 
             default:
-                printf("%x\n", inst);
                 return ERROR_UNKNOWN_OPCODE;
         }
 
@@ -288,7 +291,7 @@ int main(int argc, char* argv[]) {
         exit(ret);
     }
 
-    // Parse elf file (why the F does the elf parser write to stdout?)
+    // Parse elf file
     alloc = KB*64;
     mem = (uchar*) malloc(alloc);
     while(1) {
