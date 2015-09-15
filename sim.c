@@ -5,6 +5,15 @@
 #include "elf.h"
 #include "mips32.h"
 
+//DEBUG 
+#define DEBUG
+
+#ifdef DEBUG
+    #define D
+#else
+    #define D if(0)
+#endif
+
 // https://www.cs.umd.edu/class/sum2003/cmsc311/Notes/Mips/format.html
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/MPCSir.html
 
@@ -84,8 +93,8 @@ int interp_r(uint32_t inst) {
     uint32_t rs = GET_RS(inst);
     uint32_t rt = GET_RT(inst);
     uint32_t rd = GET_RD(inst);
-    printf("%08x\n", inst);
-    printf("Des: %u, Src1: %u Src2: %u\n", rs, rt, rd);
+    D printf("%08x\n", inst);
+    D printf("Des: %u, Src1: %u Src2: %u\n", rs, rt, rd);
     switch(GET_FUNCT(inst)) {
         // Jump register
         case FUNCT_JR:
@@ -156,7 +165,13 @@ int interp() {
     int ret;
     uint32_t inst;
     while(1) {
+        //debug
+        D print_status();
+        D printf("Program counter = %x\n", PC); 
+        D if(PC == 0x40004c){ printf("reached\n"); exit(0);}   
+
         inst = GET_BIGWORD(mem, PC);
+        D printf("Instruction = %x\n", inst);
         switch(GET_OPCODE(inst)) {
             // R type instruction
             case OPCODE_R:
@@ -172,15 +187,21 @@ int interp() {
 
             // Jump and link
             case OPCODE_JAL:
+                D print_status();
+                D printf("%x\n", nPC);
                 regs[r_ra] = nPC + INSTRUCTION_SIZE;
                 PC = nPC;
-                nPC = GET_ADDRESS(inst);
+                nPC = (PC & MS_4B) | (GET_ADDRESS(inst) << 2);
+                D print_status();
+                D printf("%x\n", nPC);
                 break;
 
             // Branch on equal
             case OPCODE_BEQ:
                 if (GET_RS(inst) == GET_RT(inst)) {
                     advance_pc(GET_IMM(inst) << 2);
+                    D print_status();
+                    D exit(0);
                 } else {
                     advance_pc(INSTRUCTION_SIZE);
                 }
@@ -197,7 +218,8 @@ int interp() {
 
             // Add immediate unsigned (no overflow)
             case OPCODE_ADDIU:
-                regs[GET_RS(inst)] += GET_IMM(inst);
+                D printf("ADDIU GET_IMM %x (%d)\n", GET_IMM(inst),(int32_t) (int16_t) GET_IMM(inst));
+                regs[GET_RS(inst)] += (int32_t) (int16_t) GET_IMM(inst);
                 advance_pc(INSTRUCTION_SIZE);
                 break;
 
@@ -231,13 +253,16 @@ int interp() {
                 advance_pc(INSTRUCTION_SIZE);
                 break;
 
-            // Save word
+            // Store word
             case OPCODE_SW:
-                SET_BIGWORD(mem, GET_RS(inst), regs[GET_RT(inst)]);
+                D printf("Storing %x GET_RS %x GET_IMM %x\n", regs[GET_RT(inst)], regs[GET_RS(inst)], GET_IMM(inst));
+
+                SET_BIGWORD(mem, regs[GET_RS(inst)] + GET_IMM(inst), regs[GET_RT(inst)]);
                 advance_pc(INSTRUCTION_SIZE);
                 break;
 
             default:
+                printf("%x\n", inst);
                 return ERROR_UNKNOWN_OPCODE;
         }
 
@@ -268,7 +293,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Parse elf file (why the F does the elf parser write to stdout?)
-    alloc = KB*64;
+    alloc = KB*1024;
     mem = (uchar*) malloc(alloc);
     while(1) {
         ret = elf_dump(argv[2], &PC, mem, alloc);
@@ -286,6 +311,8 @@ int main(int argc, char* argv[]) {
 
     // Set stack pointer
     regs[29] = alloc + MIPS_RESERVE - sizeof(uint32_t);
+    SET_BIGWORD(mem, regs[29], regs[29]);
+    D printf("GET_WORD %x regs_29 %x \n" , GET_BIGWORD(mem, regs[29]), regs[29]);
     print_status();
 
     // Set next program counter

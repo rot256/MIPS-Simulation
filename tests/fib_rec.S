@@ -12,7 +12,7 @@
 .text
 
 # Calculate fib
-li $a0, 8
+li $a0, 3
 jal fib
 nop
 
