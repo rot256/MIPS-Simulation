@@ -6,7 +6,7 @@
 #include "mips32.h"
 
 //DEBUG
-// #define DEBUG
+#define DEBUG
 //
 // TODO:
 //  FIX ADD WITHOUT OVERFLOW
@@ -151,13 +151,13 @@ int interp_r(uint32_t inst) {
 
         // Shift left
         case FUNCT_SLL:
-            regs[rd] = regs[rs] << GET_SHAMT(inst);
+            regs[rd] = regs[rt] << GET_SHAMT(inst);
             advance_pc(INSTRUCTION_SIZE);
             break;
 
         // Shift right
         case FUNCT_SRL:
-            regs[rd] = regs[rs] >> GET_SHAMT(inst);
+            regs[rd] = regs[rt] >> GET_SHAMT(inst);
             advance_pc(INSTRUCTION_SIZE);
             break;
 
@@ -202,7 +202,7 @@ int interp() {
             // Branch on equal
             case OPCODE_BEQ:
                 if (regs[GET_RS(inst)] == regs[GET_RT(inst)]) {
-                    advance_pc(GET_IMM(inst) << 2);
+                    advance_pc(SIGN_EXTEND(GET_IMM(inst) << 2));
                 } else {
                     advance_pc(INSTRUCTION_SIZE);
                 }
@@ -210,8 +210,8 @@ int interp() {
 
             // Branch on not equal
             case OPCODE_BNE:
-                if (GET_RS(inst) != GET_RT(inst)) {
-                    advance_pc(GET_IMM(inst) << 2);
+                if (regs[GET_RS(inst)] != regs[GET_RT(inst)]) {
+                    advance_pc(SIGN_EXTEND(GET_IMM(inst) << 2));
                 } else {
                     advance_pc(INSTRUCTION_SIZE);
                 }
@@ -219,7 +219,8 @@ int interp() {
 
             // Add immediate unsigned (no overflow)
             case OPCODE_ADDIU:
-                regs[GET_RT(inst)] = regs[GET_RS(inst)] + ((int32_t) (int16_t) GET_IMM(inst));
+                D printf("RT : %d, RS: %d\n", GET_RT(inst), GET_RS(inst));
+                regs[GET_RT(inst)] = regs[GET_RS(inst)] + (SIGN_EXTEND( GET_IMM(inst)));
                 advance_pc(INSTRUCTION_SIZE);
                 break;
 
