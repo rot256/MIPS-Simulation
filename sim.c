@@ -136,6 +136,12 @@ int interp_r(uint32_t inst) {
             advance_pc(INSTRUCTION_SIZE);
             break;
 
+        // Bitwise xor
+        case FUNCT_XOR:
+            regs[rd] = regs[rs] ^ regs[rt];
+            advance_pc(INSTRUCTION_SIZE);
+            break;
+
         // Bitwise not or
         case FUNCT_NOR:
             regs[rd] = !(regs[rs] | regs[rt]);
@@ -218,7 +224,6 @@ int interp() {
 
             // Add immediate unsigned (no overflow)
             case OPCODE_ADDIU:
-                D printf("RT : %d, RS: %d\n", GET_RT(inst), GET_RS(inst));
                 regs[GET_RT(inst)] = regs[GET_RS(inst)] + (SIGN_EXTEND( GET_IMM(inst)));
                 advance_pc(INSTRUCTION_SIZE);
                 break;
@@ -241,6 +246,12 @@ int interp() {
                 advance_pc(INSTRUCTION_SIZE);
                 break;
 
+            // Bitwise xor on immediate
+            case OPCODE_XORI:
+                regs[GET_RT(inst)] = regs[GET_RS(inst)] ^ GET_IMM(inst);
+                advance_pc(INSTRUCTION_SIZE);
+                break;
+
             // Load upper immediate
             case OPCODE_LUI:
                 regs[GET_RT(inst)] = GET_IMM(inst) << 16;
@@ -249,19 +260,18 @@ int interp() {
 
             // Load word
             case OPCODE_LW:
-                D printf("Load word, from %x into register %d\n", regs[GET_RS(inst)] + GET_IMM(inst), GET_RT(inst));
                 regs[GET_RT(inst)] = GET_BIGWORD(mem, regs[GET_RS(inst)] + GET_IMM(inst));
                 advance_pc(INSTRUCTION_SIZE);
                 break;
 
             // Store word
             case OPCODE_SW:
-                D printf("Store word, %x into %x\n", regs[GET_RT(inst)], GET_RS(inst) + GET_IMM(inst));
                 SET_BIGWORD(mem, regs[GET_RS(inst)] + GET_IMM(inst), regs[GET_RT(inst)]);
                 advance_pc(INSTRUCTION_SIZE);
                 break;
 
             default:
+                D printf("Unknown opcode 0x%x\n", GET_OPCODE(inst));
                 return ERROR_UNKNOWN_OPCODE;
         }
 
@@ -321,6 +331,9 @@ int main(int argc, char* argv[]) {
     ret = interp();
     if (ret == ERROR_UNKNOWN_OPCODE) {
         printf("Found unknown opcode!\n");
+        exit(ret);
+    } else if (ret == ERROR_UNKNOWN_FUNCT) {
+        printf("Found unknown funct code!\n");
         exit(ret);
     }
     print_status();
