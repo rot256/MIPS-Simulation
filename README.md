@@ -11,18 +11,19 @@
             |___/
 
  ```
-# The MIPS32-Simulator and its implications for cloud computing
+ 
+## The MIPS32-Simulator
 
-## What works (and what it means for your business)
+### What works
 
-All of the tests in the folder tests. are being simulated correctly. So all of the basic instructions should
-simulate correctly.
+All of the tests in the folder "tests" are being simulated correctly. 
+So all of the basic instructions should simulate correctly (see "testsing" below).
 
-## What doesn't work (and how it helps your marketing)
+### What doesn't work
 
 Currently syscall will only cause the simulator to stop. And not perform an actual simulation of the syscall.
 
-## Design choices (a focus on web 2.0 platforms)
+### Design choices
 
 While we were debugging, we used a rather hackish way to quickly add lines we only wanted to run if debug was enabled.
 So that instead of having to write
@@ -36,14 +37,13 @@ We could just write
 D CODE
 ```
 
-We also chose to implement the instructions a one big switch statement. Which in hindsight isn't a terribly clean way to do it.
+We also chose to implement the instructions a one big switch statement (because lazy). 
 
-
-# Testing
+### Testing
 
 In SegfaultSimulator (SS) we focused on great tests and exceptionally high code quality,
 we therefore have thorough test of every possible edge case with systematic unit tests.
-In all seriousness, there are 3 tests.
+In all seriousness - there are 3 tests.
 
     fib_rec.S    : A recursive implementation of fibonacci to test the stack (Load Word & Store Word)
     arithmetic.S : Some shitty attempt at implementing a LFSR
@@ -52,3 +52,7 @@ In all seriousness, there are 3 tests.
 Our tests are pretty complex - because we were too lazy to test every instruction seperatly.
 All three tests are passed, but this is by no means a garantee that SS will not live up to its name.
 
+### Easter eggs
+
+- Added XOR (and XORI) instructions
+- Random segfaults (please consider these easter eggs to)
