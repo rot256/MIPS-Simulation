@@ -17,7 +17,7 @@
 ### What works
 
 All of the tests in the folder "tests" are being simulated correctly. 
-So all of the basic instructions should simulate correctly (see "testsing" below).
+So all of the defined in mips32.h should simulate correctly (see "testing" below).
 
 ### What doesn't work
 
