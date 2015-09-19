@@ -13,12 +13,12 @@
  ```
 # The MIPS32-Simulator and its implications for cloud computing
 
-## What works (and what it means for our business)
+## What works (and what it means for your business)
 
 All of the tests in the folder tests. are being simulated correctly. So all of the basic instructions should
 simulate correctly.
 
-## What doesn't work (and how it helps our marketing campaign)
+## What doesn't work (and how it helps your marketing)
 
 Currently syscall will only cause the simulator to stop. And not perform an actual simulation of the syscall.
 
