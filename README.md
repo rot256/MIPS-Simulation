@@ -1,5 +1,6 @@
 
 #failing ascii art
+```
  _____             __            _ _   _____ _                 _       _             
 /  ___|           / _|          | | | /  ___(_)               | |     | |            
 \ `--.  ___  __ _| |_ __ _ _   _| | |_\ `--. _ _ __ ___  _   _| | __ _| |_ ___  _ __ 
@@ -9,6 +10,7 @@
              __/ |                                                                   
             |___/         
             
+ ```
 # The MIPS32-Simulator
 
 ## What works
@@ -22,7 +24,16 @@ Currently syscall will only cause the simulator to stop. And not perform an actu
 ## Design choices
 
 While we were debugging, we used a rather hackish way to quickly add lines we only wanted to run if debug was enabled.
-So that instead of having to write #ifdef DEBUG CODE #endif. We could just write D CODE.
+So that instead of having to write 
+```c
+#ifdef 
+ DEBUG CODE 
+#endif 
+```
+We could just write 
+```c
+D CODE
+```
 
 We also chose to implement the instructions a one big switch statement. Which in hindsight isn't a terribly clean way to do it.
 
