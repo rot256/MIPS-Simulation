@@ -1,5 +1,5 @@
 
-#failing ascii art
+# SegfaultSimulator
 ```
  _____             __            _ _   _____ _                 _       _
 /  ___|           / _|          | | | /  ___(_)               | |     | |
@@ -11,17 +11,18 @@
             |___/
 
  ```
-# The MIPS32-Simulator
+# The MIPS32-Simulator and its implications for cloud computing
 
-## What works
+## What works (and what it means for our business)
+
 All of the tests in the folder tests. are being simulated correctly. So all of the basic instructions should
 simulate correctly.
 
+## What doesn't work (and how it helps our marketing campaign)
 
-## What doesn't work
 Currently syscall will only cause the simulator to stop. And not perform an actual simulation of the syscall.
 
-## Design choices
+## Design choices (a focus on web 2.0 platforms)
 
 While we were debugging, we used a rather hackish way to quickly add lines we only wanted to run if debug was enabled.
 So that instead of having to write
