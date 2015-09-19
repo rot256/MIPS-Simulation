@@ -3,7 +3,7 @@
 .text
 
 # JUMPS!
-# t0 should hold 0x33 after execution
+# t0 should hold 0x73 after execution
 
 li $t0, 0
 li $t1, 1
@@ -32,7 +32,19 @@ addu $t0, $t0, $t1
 
 ptr5:
 
+j ptr7
+addu $t1, $t1, $t1
+addu $t0, $t0, $t1
+
+ptr8:
+
+addu $t1, $t1, $t1
+addu $t0, $t0, $t1
 syscall
+
+ptr7:
+
+j ptr8
 
 ptr6:
 
