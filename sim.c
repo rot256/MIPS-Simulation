@@ -5,21 +5,20 @@
 #include "elf.h"
 #include "mips32.h"
 
-//DEBUG
-#define DEBUG
-//
+// DEBUG
+// #define DEBUG
+
 // TODO:
 //  FIX ADD WITHOUT OVERFLOW
 //  FAILS ARITHMETIC TEST
+// http://www.mrc.uidaho.edu/mrc/people/jff/digital/MPCSir.html
+// https://www.cs.umd.edu/class/sum2003/cmsc311/Notes/Mips/format.html
 
 #ifdef DEBUG
     #define D
 #else
     #define D if(0)
 #endif
-
-// https://www.cs.umd.edu/class/sum2003/cmsc311/Notes/Mips/format.html
-// http://www.mrc.uidaho.edu/mrc/people/jff/digital/MPCSir.html
 
 // Types
 #define uchar unsigned char
@@ -189,7 +188,7 @@ int interp() {
             // Unconditional jump
             case OPCODE_J:
                 PC = nPC;
-                nPC = GET_ADDRESS(inst);
+                nPC = (PC & MS_4B) | (GET_ADDRESS(inst) << 2);
                 break;
 
             // Jump and link
