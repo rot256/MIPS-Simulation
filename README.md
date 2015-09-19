@@ -49,5 +49,5 @@ In all seriousness, there are 3 tests.
     jumps.S      : Testing branching.
 
 Our tests are pretty complex - because we were too lazy to test every instruction seperatly.
-All three tests are passed, but this is by no means a garantee that SegfaultSimulator will not live up to its name.
+All three tests are passed, but this is by no means a garantee that SS will not live up to its name.
 
