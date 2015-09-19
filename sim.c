@@ -316,7 +316,7 @@ int main(int argc, char* argv[]) {
     regs[29] = alloc + MIPS_RESERVE - sizeof(uint32_t);
     SET_BIGWORD(mem, regs[29], regs[29]);
     D printf("GET_WORD %x regs_29 %x \n" , GET_BIGWORD(mem, regs[29]), regs[29]);
-    print_status();
+    D print_status();
 
     // Set next program counter
     nPC = PC + INSTRUCTION_SIZE;
