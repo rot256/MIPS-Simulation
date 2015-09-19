@@ -8,12 +8,6 @@
 // DEBUG
 // #define DEBUG
 
-// TODO:
-//  FIX ADD WITHOUT OVERFLOW
-//  FAILS ARITHMETIC TEST
-// http://www.mrc.uidaho.edu/mrc/people/jff/digital/MPCSir.html
-// https://www.cs.umd.edu/class/sum2003/cmsc311/Notes/Mips/format.html
-
 #ifdef DEBUG
     #define D
 #else
