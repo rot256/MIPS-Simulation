@@ -1,3 +1,5 @@
+sim
+
 # Vim
 *~
 *.un~
@@ -31,3 +33,6 @@
 *.out
 *.app
 *.elf
+
+# Documentation
+*.pdf
