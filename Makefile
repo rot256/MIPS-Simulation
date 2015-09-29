@@ -24,6 +24,7 @@ clean:
 	rm -f *.o
 	rm -f *.elf
 	rm -f *.gch
+	rm sim
 
 run: sim
 	./sim
