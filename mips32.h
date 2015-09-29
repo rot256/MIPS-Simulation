@@ -1,4 +1,4 @@
-// Handout for G1, ARK15, DIKU.
+// Handout for G2, ARK15, DIKU.
 //
 // Copyright (c) 2015 DIKU.
 // Copenhagen Liberal License - v0.5 - September 6, 2015.
@@ -37,24 +37,27 @@
 #define OPCODE_JAL      (0x03)
 #define OPCODE_BEQ      (0x04)
 #define OPCODE_BNE      (0x05)
+#define OPCODE_ADDI     (0x08)
 #define OPCODE_ADDIU    (0x09)
 #define OPCODE_SLTI     (0x0A)
+#define OPCODE_SLTIU    (0x0B)
 #define OPCODE_ANDI     (0x0C)
 #define OPCODE_ORI      (0x0D)
-#define OPCODE_XORI     (0x0E)
 #define OPCODE_LUI      (0x0F)
 #define OPCODE_LW       (0x23)
 #define OPCODE_SW       (0x2B)
 
 #define FUNCT_JR        (0x08)
 #define FUNCT_SYSCALL   (0x0C)
+#define FUNCT_ADD       (0x20)
 #define FUNCT_ADDU      (0x21)
+#define FUNCT_SUB       (0x22)
 #define FUNCT_SUBU      (0x23)
 #define FUNCT_AND       (0x24)
 #define FUNCT_OR        (0x25)
-#define FUNCT_XOR       (0x26)
 #define FUNCT_NOR       (0x27)
 #define FUNCT_SLT       (0x2A)
+#define FUNCT_SLTU      (0x2B)
 #define FUNCT_SLL       (0x00)
 #define FUNCT_SRL       (0x02)
 
