@@ -33,6 +33,10 @@ sim
 *.out
 *.app
 *.elf
+sim
 
 # Documentation
 *.pdf
+
+# Junk
+*.old
