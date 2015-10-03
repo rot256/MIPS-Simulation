@@ -52,11 +52,11 @@ int read_config(const char *path) {
 int cycle() {
     int ret;
 
-    // TODO : Check return value
-    ret = interp_id();
-    if (ret) return ret;
-    ret = interp_if();
-    if (ret) return ret;
+    if((ret = interp_wb())) return ret;
+    if((ret = interp_mem())) return ret;
+    if((ret = interp_exe())) return ret;
+    if((ret = interp_id())) return ret;
+    if((ret = interp_if())) return ret;
 
     return ret;
 }
@@ -64,9 +64,15 @@ int cycle() {
 int interp() {
     int ret = 0;
     while(ret == 0) {
+        D printf("\n\n\n");
+        D printf("DEBUG : Cycle %lu \n", cycles);
+
         ret = cycle();
+        D printf("DEBUG : Press enter to continue...");
+        D getchar();
         cycles++;
     }
+    D printf("\n\n\n");
     return ret;
 }
 
@@ -116,13 +122,16 @@ int main(int argc, char* argv[]) {
 
     // Run
     ret = interp();
+    print_status();
     if (ret == ERROR_UNKNOWN_OPCODE) {
         printf("Found unknown opcode!\n");
         exit(ret);
     } else if (ret == ERROR_UNKNOWN_FUNCT) {
         printf("Found unknown funct code!\n");
         exit(ret);
+    } else if (ret != 0) {
+        printf("Encountered unhandled error! [%d]\n", ret);
+        exit(ret);
     }
-    print_status();
     return 0;
 }

@@ -5,7 +5,7 @@
 #define CONSTS_H
 
 // Debugging
-// #define DEBUG
+#define DEBUG
 #ifdef DEBUG
 #define D
 #else
@@ -24,6 +24,7 @@
 #define ERROR_INVALID_ELF    -3
 #define ERROR_UNKNOWN_OPCODE -4
 #define ERROR_UNKNOWN_FUNCT  -5
+#define ERROR_OVERFLOW       -6
 
 // Index of special registers
 #define r_at 1

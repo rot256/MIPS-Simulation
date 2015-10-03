@@ -16,7 +16,7 @@ struct preg_id_exe {
     bool mem_write;       // Control : Memory writeback
     bool reg_write;       // Control : Register writeback
 
-    uint32_t rs;          // RS value
+    uint32_t rt;          // RS value
     uint32_t funct;       // Funct value
     uint32_t rs_value;    // Value in rs register
     uint32_t rt_value;    // Value in rt register
@@ -38,10 +38,8 @@ struct preg_exe_mem
 struct preg_mem_wb
 {
     bool reg_write;       // Control : Register writeback
-
+    uint32_t read_data;   // Data read from memory
     uint32_t rt;          // RT value
-
-
 };
 
 // Pipeline steps
@@ -50,5 +48,6 @@ int interp_if();
 int interp_id();
 int interp_exe();
 int interp_mem();
+int interp_wb();
 
 #endif
