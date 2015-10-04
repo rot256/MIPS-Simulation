@@ -58,6 +58,8 @@ int cycle() {
     if((ret = interp_id())) return ret;
     if((ret = interp_if())) return ret;
 
+    // TODO : Forwarding
+
     return ret;
 }
 
@@ -129,9 +131,11 @@ int main(int argc, char* argv[]) {
     } else if (ret == ERROR_UNKNOWN_FUNCT) {
         printf("Found unknown funct code!\n");
         exit(ret);
-    } else if (ret != 0) {
+    } else if (ret < 0) {
         printf("Encountered unhandled error! [%d]\n", ret);
         exit(ret);
+    } else if (ret != SIG_HALT_PROGRAM) {
+        printf("Terminated with signal: [%d]\n", ret);
     }
     return 0;
 }
