@@ -54,11 +54,11 @@ struct preg_mem_wb
 
 // Pipeline steps
 
-int interp_if();
+void interp_if();
 int interp_id();
 int interp_exe();
-int interp_mem();
-int interp_wb();
+void interp_mem();
+void interp_wb();
 
 // Pipeline forwarding
 

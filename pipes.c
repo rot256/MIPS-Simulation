@@ -26,40 +26,59 @@ int cycle() {
     flush = false;
 
     // Run pipeline
-    if((ret = interp_wb())) return ret;
-    if((ret = interp_mem())) return ret;
-    if((ret = interp_exe())) return ret;
-    if((ret = interp_id())) return ret;
-    if((ret = interp_if())) return ret;
+    interp_wb();
+    interp_mem();
+    if ((ret = interp_exe())) return ret;
+    if ((ret = interp_id())) return ret;
+    interp_if();
 
     // Hazard detection
-    if((ret = forward())) return ret;
+    forward();
 
     // Update PC (could be moved to IF)
     if (jump)  {
         D printf("DEBUG : Cycle : Perform jump : Target=[0x%x]\n", jump_target);
         PC = jump_target;
-    } else {
-        PC += INSTRUCTION_SIZE;
     }
     return ret;
 }
 
 // PIPELINE : Instruction fetch
-int interp_if() {
+void interp_if() {
     D printf("DEBUG : Pipeline : Instruction Fetch\n");
+
+    if_id.next_pc = PC + INSTRUCTION_SIZE;
+    if_id.inst = GET_BIGWORD(mem, PC);
+
     if (flush) {
         D printf("DEBUG   - Insert NOP\n");
         if_id.inst = 0x0;
-    } else {
-        if_id.inst = GET_BIGWORD(mem, PC);
-        if_id.next_pc = PC + INSTRUCTION_SIZE;
-        instr_cnt++;
+        return;
     }
 
+    // Check Load-use hazards
+    // NOTE : This is more strict than it need be, for instance an I-Type instruction will
+    // use RS as an operand and RT as destination - and it does not matter what value the destination holds.
+    // In reality, who cares?
     D printf("DEBUG   - Loaded instruction 0x%08x\n", if_id.inst);
+    if (id_exe.mem_read) {
+        if (GET_RS(if_id.inst) == id_exe.rt) {
+            D printf("DEBUG   - Load-use hazard detected for RS\n");
+            if_id.inst = 0x0;
+            return;
+        } else if (GET_RT(if_id.inst) == id_exe.rt) {
+            D printf("DEBUG   - Load-use hazard detected for RT\n");
+            if_id.inst = 0x0;
+            return;
+        }
+    }
+
+    // Carry next PC
+    PC = if_id.next_pc;
+    instr_cnt++;
+
     D printf("DEBUG   - Next PC 0x%x\n", PC);
-    return 0;
+    return;
 }
 
 // CONTROL :
@@ -297,6 +316,7 @@ int interp_control() {
 // PIPELINE : Instruction decode
 int interp_id() {
     D printf("DEBUG : Pipeline : Instruction Decode\n");
+    D printf("DEBUG   - Instruction = [0x%08x]\n", if_id.inst);
 
     // Load fields from instruction
     id_exe.rt = GET_RT(if_id.inst);
@@ -377,7 +397,7 @@ int alu() {
             exe_mem.alu_res = op1 - op2;
 
             // Underflow detection (TODO : Sanity check - dont code late)
-            if ((uint32_t) exe_mem.alu_res > (uint32_t) op1) return ERROR_OVERFLOW;
+            // if ((uint32_t) exe_mem.alu_res > (uint32_t) op1) return ERROR_OVERFLOW;
             break;
 
         case FUNCT_SUBU:
@@ -390,8 +410,8 @@ int alu() {
             exe_mem.alu_res = op1 + op2;
 
             // Overflow detection
-            if ((uint32_t) exe_mem.alu_res < (uint32_t) op1) return ERROR_OVERFLOW;
-            if ((uint32_t) exe_mem.alu_res < (uint32_t) op2) return ERROR_OVERFLOW;
+            // if ((uint32_t) exe_mem.alu_res < (uint32_t) op1) return ERROR_OVERFLOW;
+            // if ((uint32_t) exe_mem.alu_res < (uint32_t) op2) return ERROR_OVERFLOW;
             break;
 
         case FUNCT_ADDU:
@@ -436,8 +456,9 @@ int interp_exe() {
 }
 
 // PIPELINE : Memory
-int interp_mem() {
+void interp_mem() {
     D printf("DEBUG : Pipeline : Memory\n");
+    D printf("DEBUG   - ALURes = [0x%x]\n", exe_mem.alu_res);
 
     // Carry forward
     mem_wb.reg_write = exe_mem.reg_write;
@@ -458,22 +479,23 @@ int interp_mem() {
         SET_BIGWORD(mem, exe_mem.alu_res, exe_mem.rt_value);
         D printf("DEBUG   - Store value 0x%x into 0x%x [SW]\n", exe_mem.rt_value, exe_mem.alu_res);
     }
-    return 0;
+    return;
 }
 
 // PIPELINE : Writeback
-int interp_wb() {
+void interp_wb() {
     D printf("DEBUG : Pipeline : Writeback\n");
+    D printf("DEBUG   - ALURes = [0x%x]\n", mem_wb.alu_res);
 
-    if (!mem_wb.reg_write) return 0;
-    if (!mem_wb.reg_dst) return 0;
+    if (!mem_wb.reg_write) return;
+    if (!mem_wb.reg_dst) return;
 
     D printf("DEBUG   - Writing to register bank\n");
     D printf("DEBUG   - MemToReg = [%d]\n", mem_wb.mem_to_reg);
 
     regs[mem_wb.reg_dst] = mem_wb.mem_to_reg ? mem_wb.read_data : mem_wb.alu_res;
 
-    return 0;
+    return;
 }
 
 // FORWARDING
@@ -493,7 +515,7 @@ int forward() {
         }
 
         // Check RT
-        else if (exe_mem.reg_dst == id_exe.rt) {
+        if (exe_mem.reg_dst == id_exe.rt) {
             D printf("DEBUG   - EX hazard : Forward ALURes to RTValue [%d]\n", exe_mem.reg_dst);
             id_exe.rt_value = exe_mem.alu_res;
         }
@@ -513,7 +535,7 @@ int forward() {
             }
         }
         // Check RT
-        else if (mem_wb.reg_dst == id_exe.rt && exe_mem.reg_dst != id_exe.rt) {
+        if (mem_wb.reg_dst == id_exe.rt && exe_mem.reg_dst != id_exe.rt) {
             if (mem_wb.mem_to_reg) {
                 D printf("DEBUG   - MEM hazard : Forward ReadData to RTValue [%d]\n", mem_wb.reg_dst);
                 id_exe.rt_value = mem_wb.read_data;
@@ -523,10 +545,6 @@ int forward() {
             }
         }
     }
-
-    // Detect Load-use hazard
-
-
 
     return 0;
 }
