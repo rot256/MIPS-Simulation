@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
         printf("Error codes:\n");
         printf("IO ERROR       : %4d\n", ERROR_IO_ERROR);
         printf("INVALID CONFIG : %4d\n", ERROR_INVALID_CONFIG);
-        exit(0);
+        exit(-1);
     }
 
     // Read config file and print inital status
@@ -99,7 +99,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Parse elf file
-    alloc = KB*64;
+    alloc = KB*640;
     mem = (uchar*) malloc(alloc);
     while(1) {
         ret = elf_dump(argv[2], &PC, mem, alloc);

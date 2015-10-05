@@ -29,7 +29,7 @@ int interp_if() {
 int interp_control() {
     // Set control signals
     switch(GET_OPCODE(if_id.inst)) {
-        // Load word
+        // Memory
         case OPCODE_LW:
             D printf("DEBUG   - LW instruction\n");
             id_exe.mem_read = true;
@@ -42,7 +42,6 @@ int interp_control() {
             id_exe.reg_dst = GET_RT(if_id.inst);
             break;
 
-        // Store word
         case OPCODE_SW:
             D printf("DEBUG   - SW instruction\n");
             id_exe.mem_read = false;
