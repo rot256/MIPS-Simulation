@@ -7,12 +7,6 @@
 #include "consts.h"
 #include "pipes.h"
 
-// Advance the program counter
-static inline void advance_pc(int32_t offset) {
-    PC  =  nPC;
-    nPC += offset;
-}
-
 // Print simulation status
 void print_status() {
     printf("Executed %zu instruction(s).\n", instr_cnt);
@@ -87,12 +81,12 @@ int main(int argc, char* argv[]) {
 
     // Parse elf file
     alloc = KB*640;
-    mem = (uchar*) malloc(alloc);
+    mem = (unsigned char*) malloc(alloc);
     while(1) {
         ret = elf_dump(argv[2], &PC, mem, alloc);
         if (ret == ELF_ERROR_OUT_OF_MEM) {
             alloc *= 2;
-            mem = (uchar*) realloc(mem, alloc);
+            mem = (unsigned char*) realloc(mem, alloc);
             continue;
         }
         if (ret != 0) {
@@ -105,9 +99,6 @@ int main(int argc, char* argv[]) {
     // Set stack pointer
     regs[29] = alloc + MIPS_RESERVE + sizeof(uint32_t);
     D print_status();
-
-    // Set next program counter
-    nPC = PC + INSTRUCTION_SIZE;
 
     // Run
     ret = interp();

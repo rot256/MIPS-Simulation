@@ -12,8 +12,8 @@
 #define D if(0)
 #endif
 
-// Types
-#define uchar unsigned char
+// Sign extend to 64-bit
+#define EXT64I(value) ((int64_t)(int32_t)value)
 
 // Signal codes
 #define SIG_HALT_PROGRAM 1
@@ -40,12 +40,11 @@
 // Registers
 uint32_t regs[32]; // General purpose
 uint32_t PC;       // Program counter
-uint32_t nPC;      // Next program counter
 size_t instr_cnt;  // Number of instructions executed
 size_t cycles;     // Number of cycles executed
 
 // Memory
 size_t alloc;
-uchar* mem;
+unsigned char* mem;
 
 #endif
