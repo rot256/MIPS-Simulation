@@ -3,6 +3,7 @@
 
 #ifndef PIPES_H
 #define PIPES_H
+#define EXT64I(value) ((uint64_t)(uint32_t)value)
 
 // Pipeline register structures
 
