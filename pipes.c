@@ -69,7 +69,7 @@ int interp_control() {
 
         // Arithmetic
         case OPCODE_ADDIU:
-            D printf("DEBUG   - Add Immediate Unsigned\n");
+            D printf("DEBUG   - Add Immediate (ignore overflow)\n");
 
             // Control
             id_exe.mem_read = false;
@@ -79,6 +79,20 @@ int interp_control() {
             id_exe.mem_to_reg = false;              // We want the output of the ALU
 
             id_exe.funct = FUNCT_ADDU;              // Add no overflow
+            id_exe.reg_dst = GET_RT(if_id.inst);    // Destination is in RT
+            break;
+
+        case OPCODE_ADDI:
+            D printf("DEBUG   - Add Immediate (check overflow)\n");
+
+            // Control
+            id_exe.mem_read = false;
+            id_exe.mem_write = false;
+            id_exe.reg_write = true;
+            id_exe.alu_src = true;                  // Source is imm
+            id_exe.mem_to_reg = false;              // We want the output of the ALU
+
+            id_exe.funct = FUNCT_ADD;               // Add with overflow
             id_exe.reg_dst = GET_RT(if_id.inst);    // Destination is in RT
             break;
 
@@ -93,6 +107,20 @@ int interp_control() {
             id_exe.mem_to_reg = false;              // We want the output of the ALU
 
             id_exe.funct = FUNCT_SLT;               // Set on less than (signed)
+            id_exe.reg_dst = GET_RT(if_id.inst);    // Destination is in RT
+            break;
+
+        case OPCODE_SLTIU:
+            D printf("DEBUG   - Set on Less Than Immediate (unsigned)\n");
+
+            // Control
+            id_exe.mem_read = false;
+            id_exe.mem_write = false;
+            id_exe.reg_write = true;
+            id_exe.alu_src = true;                  // Source is imm
+            id_exe.mem_to_reg = false;              // We want the output of the ALU
+
+            id_exe.funct = FUNCT_SLTU;               // Set on less than (signed)
             id_exe.reg_dst = GET_RT(if_id.inst);    // Destination is in RT
             break;
 
@@ -375,5 +403,10 @@ int interp_wb() {
 
     regs[mem_wb.reg_dst] = mem_wb.mem_to_reg ? mem_wb.read_data : mem_wb.alu_res;
 
+    return 0;
+}
+
+// FORWARDING
+int forward() {
     return 0;
 }
