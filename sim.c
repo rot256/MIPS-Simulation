@@ -16,6 +16,7 @@ static inline void advance_pc(int32_t offset) {
 // Print simulation status
 void print_status() {
     printf("Executed %zu instruction(s).\n", instr_cnt);
+    printf("%zu cycle(s) elapsed.\n", cycles);
     printf("pc = 0x%x\n", PC);
     printf("at = 0x%x\n", regs[r_at]);
     printf("v0 = 0x%x\n", regs[r_v0]);
@@ -47,20 +48,6 @@ int read_config(const char *path) {
     if (f == NULL) return ERROR_IO_ERROR;
     if (read_config_stream(f) != 0) return ERROR_IO_ERROR;
     return fclose(f);
-}
-
-int cycle() {
-    int ret;
-
-    if((ret = interp_wb())) return ret;
-    if((ret = interp_mem())) return ret;
-    if((ret = interp_exe())) return ret;
-    if((ret = interp_id())) return ret;
-    if((ret = interp_if())) return ret;
-
-    // TODO : Forwarding
-
-    return ret;
 }
 
 int interp() {

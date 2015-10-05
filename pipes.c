@@ -8,20 +8,57 @@ static struct preg_id_exe  id_exe;
 static struct preg_exe_mem exe_mem;
 static struct preg_mem_wb  mem_wb;
 
+/* Code attempts to model the processor layout on page 320 (Patterson & Hennessy)
+ * As closly as possible (within reasonable limits)
+ */
+
+static bool flush;              // Signal IF to fetch a NOP
+static bool jump;               // Control signal to PC mux (left) (TODO : Rename)
+static uint32_t jump_target;    // Jump address bus (TODO : Rename)
+
+// Run cycle
+int cycle() {
+    int ret;
+
+    // NOTE : These are lines, unlike the pipeline registers they fall to low when not held high
+    // In the real world all states happen in parallel (thats the point)
+    jump = false;
+    flush = false;
+
+    // Run pipeline
+    if((ret = interp_wb())) return ret;
+    if((ret = interp_mem())) return ret;
+    if((ret = interp_exe())) return ret;
+    if((ret = interp_id())) return ret;
+    if((ret = interp_if())) return ret;
+
+    // Hazard detection
+    if((ret = forward())) return ret;
+
+    // Update PC (could be moved to IF)
+    if (jump)  {
+        D printf("DEBUG : Cycle : Perform jump : Target=[0x%x]\n", jump_target);
+        PC = jump_target;
+    } else {
+        PC += INSTRUCTION_SIZE;
+    }
+    return ret;
+}
+
 // PIPELINE : Instruction fetch
 int interp_if() {
     D printf("DEBUG : Pipeline : Instruction Fetch\n");
-
-    if_id.inst = GET_BIGWORD(mem, PC);
-    if_id.nPC = PC + INSTRUCTION_SIZE;
-
-    // TODO : PC = Branch / PC+4
-    PC += INSTRUCTION_SIZE;
+    if (flush) {
+        D printf("DEBUG   - Insert NOP\n");
+        if_id.inst = 0x0;
+    } else {
+        if_id.inst = GET_BIGWORD(mem, PC);
+        if_id.next_pc = PC + INSTRUCTION_SIZE;
+        instr_cnt++;
+    }
 
     D printf("DEBUG   - Loaded instruction 0x%08x\n", if_id.inst);
     D printf("DEBUG   - Next PC 0x%x\n", PC);
-
-    instr_cnt++;
     return 0;
 }
 
@@ -32,6 +69,8 @@ int interp_control() {
         // Memory
         case OPCODE_LW:
             D printf("DEBUG   - LW instruction\n");
+
+            // Control
             id_exe.mem_read = true;
             id_exe.mem_write = false;
             id_exe.reg_write = true;
@@ -44,6 +83,8 @@ int interp_control() {
 
         case OPCODE_SW:
             D printf("DEBUG   - SW instruction\n");
+
+            // Control
             id_exe.mem_read = false;
             id_exe.mem_write = true;
             id_exe.reg_write = false;
@@ -57,6 +98,8 @@ int interp_control() {
         // R-Type instructions
         case OPCODE_R:
             D printf("DEBUG   - R-type instruction\n");
+
+            // Control
             id_exe.mem_read = false;
             id_exe.mem_write = false;
             id_exe.reg_write = true;
@@ -120,7 +163,7 @@ int interp_control() {
             id_exe.alu_src = true;                  // Source is imm
             id_exe.mem_to_reg = false;              // We want the output of the ALU
 
-            id_exe.funct = FUNCT_SLTU;               // Set on less than (signed)
+            id_exe.funct = FUNCT_SLTU;              // Set on less than (signed)
             id_exe.reg_dst = GET_RT(if_id.inst);    // Destination is in RT
             break;
 
@@ -173,10 +216,13 @@ int interp_control() {
 
             // JUMP
             if (id_exe.rs_value == id_exe.rt_value) {
-                PC = if_id.nPC + id_exe.sign_ext_imm;
+                // TODO : Detect overflow
+                jump = true;
+                jump_target = if_id.next_pc + (id_exe.sign_ext_imm << 2);
             }
 
             // Bubble
+            id_exe.mem_read = false;
             id_exe.mem_write = false;
             id_exe.reg_write = false;
 
@@ -186,11 +232,14 @@ int interp_control() {
             D printf("DEBUG   - Branch on Not Equal [%d]\n", (id_exe.rs_value != id_exe.rt_value) & 1);
 
             // JUMP
-            if (id_exe.rs_value == id_exe.rt_value) {
-                PC = if_id.nPC + id_exe.sign_ext_imm;
+            if (id_exe.rs_value != id_exe.rt_value) {
+                // TODO : Detect overflow
+                jump = true;
+                jump_target = if_id.next_pc + (id_exe.sign_ext_imm << 2);
             }
 
             // Bubble
+            id_exe.mem_read = false;
             id_exe.mem_write = false;
             id_exe.reg_write = false;
 
@@ -200,9 +249,11 @@ int interp_control() {
             D printf("DEBUG   - Jump\n");
 
             // JUMP
-            PC = (if_id.nPC & MS_4B) | (GET_ADDRESS(if_id.inst) << 2);
+            jump = true;
+            jump_target = (if_id.next_pc & MS_4B) | (GET_ADDRESS(if_id.inst) << 2);
 
             // Bubble
+            id_exe.mem_read = false;
             id_exe.mem_write = false;
             id_exe.reg_write = false;
             break;
@@ -211,7 +262,8 @@ int interp_control() {
             D printf("DEBUG   - Jump And Link\n");
 
             // JUMP
-            PC = (if_id.nPC & MS_4B) | (GET_ADDRESS(if_id.inst) << 2);
+            jump = true;
+            jump_target = (if_id.next_pc & MS_4B) | (GET_ADDRESS(if_id.inst) << 2);
 
             // Write to RA
             id_exe.mem_read = false;
@@ -222,7 +274,7 @@ int interp_control() {
             id_exe.reg_dst = r_ra;
             id_exe.funct = FUNCT_ADD;
             // TODO : Check this
-            id_exe.rs_value = if_id.nPC;
+            id_exe.rs_value = if_id.next_pc;
             id_exe.rt_value = 0x4;
             break;
 
@@ -248,6 +300,7 @@ int interp_id() {
 
     // Load fields from instruction
     id_exe.rt = GET_RT(if_id.inst);
+    id_exe.rs = GET_RS(if_id.inst);
     id_exe.rs_value = regs[GET_RS(if_id.inst)];
     id_exe.rt_value = regs[GET_RT(if_id.inst)];
     id_exe.sign_ext_imm = SIGN_EXTEND(GET_IMM(if_id.inst));
@@ -267,6 +320,23 @@ int alu() {
 
     // Complete compuation
     switch(id_exe.funct) {
+        case FUNCT_JR:
+            D printf("DEBUG   - OP = [FUNCT_JR] (Jump Register)\n");
+            // NOTE : Realistically this would not happen in the ALU
+
+            // Jump
+            jump = true;
+            jump_target = op1;
+
+            // NOP next IF
+            flush = true;
+
+            // Pass bubble
+            exe_mem.mem_read = false;
+            exe_mem.mem_write = false;
+            exe_mem.reg_write = false;
+            break;
+
         case FUNCT_AND:
             D printf("DEBUG   - OP = [FUNCT_AND] (Bitwise AND)\n");
             exe_mem.alu_res = op1 & op2;
@@ -408,5 +478,56 @@ int interp_wb() {
 
 // FORWARDING
 int forward() {
+    D printf("DEBUG : Hazard detection\n");
+
+    // NOTE : We cannot terminate the function after detecting a single hazard,
+    // although MIPS instructions can only write to 1 register, we might need to
+    // forward one operand from MEM and one from WB!
+
+    // Detect EX hazards
+    if (exe_mem.reg_write && exe_mem.reg_dst != 0) {
+        // Check RS
+        if(exe_mem.reg_dst == id_exe.rs) {
+            D printf("DEBUG   - EX hazard : Forward ALURes to RSValue [%d]\n", exe_mem.reg_dst);
+            id_exe.rs_value = exe_mem.alu_res;
+        }
+
+        // Check RT
+        else if (exe_mem.reg_dst == id_exe.rt) {
+            D printf("DEBUG   - EX hazard : Forward ALURes to RTValue [%d]\n", exe_mem.reg_dst);
+            id_exe.rt_value = exe_mem.alu_res;
+        }
+    }
+
+    // Detect MEM hazards
+    if (mem_wb.reg_write && mem_wb.reg_dst != 0) {
+        // Check RS
+        if (mem_wb.reg_dst == id_exe.rs && exe_mem.reg_dst != id_exe.rs) {
+            if (mem_wb.mem_to_reg) {
+                D printf("DEBUG   - MEM hazard : Forward ReadData to RSValue [%d]\n", mem_wb.reg_dst);
+                id_exe.rs_value = mem_wb.read_data;
+            } else {
+                D printf("DEBUG   - MEM hazard : Forward ALURes to RSValue [%d]\n", mem_wb.reg_dst);
+                id_exe.rs_value = mem_wb.alu_res;
+
+            }
+        }
+        // Check RT
+        else if (mem_wb.reg_dst == id_exe.rt && exe_mem.reg_dst != id_exe.rt) {
+            if (mem_wb.mem_to_reg) {
+                D printf("DEBUG   - MEM hazard : Forward ReadData to RTValue [%d]\n", mem_wb.reg_dst);
+                id_exe.rt_value = mem_wb.read_data;
+            } else {
+                D printf("DEBUG   - MEM hazard : Forward ALURes to RTValue [%d]\n", mem_wb.reg_dst);
+                id_exe.rt_value = mem_wb.alu_res;
+            }
+        }
+    }
+
+    // Detect Load-use hazard
+
+
+
     return 0;
 }
+
