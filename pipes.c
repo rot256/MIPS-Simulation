@@ -395,15 +395,12 @@ int alu() {
         case FUNCT_SUB:
             D printf("DEBUG   - OP = [FUNCT_SUB] (Subtraction - check overflow)\n");
             exe_mem.alu_res = op1 - op2;
-
-            // Underflow detection (TODO : Sanity check - dont code late)
-            // if ((uint32_t) exe_mem.alu_res > (uint32_t) op1) return ERROR_OVERFLOW;
+            if (EXT64I(op1) - EXT64I(op2) != EXT64I(exe_mem.alu_res)) return ERROR_OVERFLOW;
             break;
 
         case FUNCT_SUBU:
             D printf("DEBUG   - OP = [FUNCT_SUBU] (Subtraction - no overflow)\n");
             exe_mem.alu_res = op1 - op2;
-            if (EXT64I(op1) - EXT64I(op2) != EXT64I(exe_mem.alu_res)) return ERROR_OVERFLOW;
             break;
 
         case FUNCT_ADD:

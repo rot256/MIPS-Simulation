@@ -65,7 +65,7 @@ void interp_wb();
 
 int forward();
 
-//
+// Run MIPS cycle
 
 int cycle();
 
