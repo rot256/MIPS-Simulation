@@ -422,7 +422,7 @@ int alu() {
 
         case FUNCT_SRL:
             D printf("DEBUG   - OP = [FUNCT_SRL] (Shift right)\n");
-            exe_mem.alu_res = op1 >> id_exe.shamt;
+            exe_mem.alu_res = op2 >> id_exe.shamt;
             break;
 
         case FUNCT_SUB:
