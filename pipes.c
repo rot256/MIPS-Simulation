@@ -38,6 +38,12 @@ int cycle() {
     // Update PC (could be moved to IF)
     if (jump)  {
         D printf("DEBUG : Cycle : Perform jump : Target=[0x%x]\n", jump_target);
+        #ifdef DEBUG
+        if (jump_target % 4 != 0) {
+            D printf("DEBUG : Cycle : Jump to invalid address!\n");
+            exit(-1);
+        }
+        #endif
         PC = jump_target;
     }
     return ret;
@@ -59,7 +65,6 @@ void interp_if() {
     // Check Load-use hazards
     // NOTE : This is more strict than it need be, for instance an I-Type instruction will
     // use RS as an operand and RT as destination - and it does not matter what value the destination holds.
-    // In reality, who cares?
     D printf("DEBUG   - Loaded instruction 0x%08x\n", if_id.inst);
     if (id_exe.mem_read) {
         if (GET_RS(if_id.inst) == id_exe.rt) {
@@ -318,12 +323,15 @@ int interp_control() {
             id_exe.mem_write = false;
             id_exe.reg_write = true;
             id_exe.mem_to_reg = false;
+            id_exe.alu_src = false;
+
+            D printf("DEBUG   - Write 0x%x + 0x4 = 0x%x to RA\n", if_id.next_pc, if_id.next_pc + 0x4);
 
             id_exe.reg_dst = r_ra;
             id_exe.funct = FUNCT_ADD;
-            // TODO : Check this
             id_exe.rs_value = if_id.next_pc;
             id_exe.rt_value = 0x4;
+            id_exe.rt = 0; // Fucking hazard detection
             break;
 
         default:
@@ -548,18 +556,6 @@ int forward() {
         else if (exe_mem.reg_dst == id_exe.rt) {
             D printf("DEBUG   - EX hazard : Forward ALURes to RTValue [%d]\n", exe_mem.reg_dst);
             id_exe.rt_value = exe_mem.alu_res;
-        }
-    }
-
-    if (exe_mem.reg_write && exe_mem.reg_dst != 0) {
-        // Check RS
-        if(id_exe.reg_dst == id_exe.rs) {
-            D printf("DEBUG   - EX hazard : Forward ALURes to RSValue [%d]\n", exe_mem.reg_dst);
-        }
-
-        // Check RT
-        else if (id_exe.reg_dst == id_exe.rt) {
-            D printf("DEBUG   - EX hazard : Forward ALURes to RTValue [%d]\n", exe_mem.reg_dst);
         }
     }
 

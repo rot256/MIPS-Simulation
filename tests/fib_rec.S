@@ -4,12 +4,15 @@
 #
 # This code also executes in the MARS simulator
 
+# Post
+# v0 = 0x5
+
 .data
 
 .text
 
 # Calculate fib
-li $a0, 8
+li $a0, 5
 jal fib
 
 # Stop
