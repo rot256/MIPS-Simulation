@@ -1,3 +1,10 @@
+# Post
+# t3 = 0x32
+# t4 = 0xffffffce
+# t7 = 0x96
+# v0 = 0xffffff6a
+# v1 = 0xffffffce
+
 li $t1, 100
 li $t2, 50
 li $t5, -2147483647
