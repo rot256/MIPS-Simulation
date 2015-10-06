@@ -1,5 +1,7 @@
 #Testing overflow with the different adds
 #This tests add, addu, addi, addiu, li, ori, lui
+# Post
+# Encountered overflow!
 li $t1, 32767
 li $t2, 32767
 li $t3, 2147483647
