@@ -49,7 +49,7 @@ int interp() {
     while(ret == 0) {
         D printf("\n\n\n");
         D printf("DEBUG : Cycle %lu \n", cycles);
-
+        D print_status();
         ret = cycle();
         D printf("DEBUG : Press enter to continue...");
         D getchar();

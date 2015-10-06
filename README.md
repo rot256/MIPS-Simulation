@@ -34,11 +34,6 @@ Another side effect of this design is that the edge case for JAL is avoided:
 
 Since we interped JR in EX (to seperate I-Type and R-Type completely).
 
-A possible catch-ya would be if the delay slot for a JR instruction held a J (or JAL or Branch).
-But this is nicely handled by the way the pipeline is run, if the delay slot contains a branch or jump the target address could be messed up - in the real world we would need a mux to selected the target from the delay slot instruction.
-But in our implementation interp_id() is run after interp_exe(), and as such interp_id() overrides the jump address, yielding the desired effect.
-Thus we avoid this edge case.
-
 ### Hazards
 
 All hazards which can be mitigated using forwarding is handled in the **forward()** function.

@@ -83,7 +83,7 @@ void interp_if() {
 
 // CONTROL :
 int interp_control() {
-    // Set control signals
+    // Set control signal
     switch(GET_OPCODE(if_id.inst)) {
         // Memory
         case OPCODE_LW:
@@ -193,8 +193,12 @@ int interp_control() {
             id_exe.mem_read = false;
             id_exe.mem_write = false;
             id_exe.reg_write = true;
-            id_exe.alu_src = true;                  // Source is imm
             id_exe.mem_to_reg = false;              // We want the output of the ALU
+
+            // Insert raw immidate into RT (kinda hackish)
+            id_exe.alu_src = false;                 // Source is imm (but not sign extended)
+            id_exe.rt_value = GET_IMM(if_id.inst);  // Raw immidate
+            id_exe.rt = 0;                          // Avoid hazard detection fucking us over
 
             id_exe.funct = FUNCT_AND;               // Bitwise AND
             id_exe.reg_dst = GET_RT(if_id.inst);    // Destination is in RT
@@ -202,27 +206,34 @@ int interp_control() {
 
         case OPCODE_ORI:
             D printf("DEBUG   - OR with Immediate\n");
-
             // Control
             id_exe.mem_read = false;
             id_exe.mem_write = false;
             id_exe.reg_write = true;
-            id_exe.alu_src = true;                  // Source is imm
             id_exe.mem_to_reg = false;              // We want the output of the ALU
+
+            // Insert raw immidate into RT (kinda hackish)
+            id_exe.alu_src = false;                 // Source is imm (but not sign extended)
+            id_exe.rt_value = GET_IMM(if_id.inst);  // Raw immidate
+            id_exe.rt = 0;                          // Avoid hazard detection fucking us over
 
             id_exe.funct = FUNCT_OR;                // Bitwise OR
             id_exe.reg_dst = GET_RT(if_id.inst);    // Destination is in RT
             break;
 
         case OPCODE_LUI:
-            D printf("DEBUG   - XOR with Immediate\n");
+            D printf("DEBUG   - Load Upper Immediate\n");
 
             // Control
             id_exe.mem_read = false;
             id_exe.mem_write = false;
             id_exe.reg_write = true;
-            id_exe.alu_src = true;                  // Source is imm
             id_exe.mem_to_reg = false;              // We want the output of the ALU
+
+            // Insert raw immidate into RT (kinda hackish)
+            id_exe.alu_src = false;                 // Source is imm (but not sign extended)
+            id_exe.rt_value = GET_IMM(if_id.inst);  // Raw immidate
+            id_exe.rt = 0;                          // Avoid hazard detection fucking us over
 
             id_exe.funct = FUNCT_SLL;               // Logical shift
             id_exe.shamt = 16;                      // Shift by 16
@@ -310,6 +321,7 @@ int interp_control() {
     D printf("DEBUG   - MemToReg = [%d]\n", id_exe.mem_to_reg);
     D printf("DEBUG   - RegDst   = [%d]\n", id_exe.reg_dst);
     D printf("DEBUG   - FUNCT    = [0x%x]\n", id_exe.funct);
+    D printf("DEBUG   - Imm : 0x%x\n", id_exe.sign_ext_imm);
     return 0;
 }
 
@@ -337,6 +349,7 @@ int alu() {
     uint32_t op2 = id_exe.alu_src ? id_exe.sign_ext_imm : id_exe.rt_value;
     D printf("DEBUG   - SrcVal1 = [0x%x]\n", op1);
     D printf("DEBUG   - SrcVal2 = [0x%x]\n", op2);
+    D printf("DEBUG   - ALUSrc  = [%d]\n", id_exe.alu_src);
 
     // Complete compuation
     switch(id_exe.funct) {
@@ -374,7 +387,8 @@ int alu() {
 
         case FUNCT_SLL:
             D printf("DEBUG   - OP = [FUNCT_SLL] (Shift left)\n");
-            exe_mem.alu_res = op1 << id_exe.shamt;
+            exe_mem.alu_res = op2 << id_exe.shamt;
+            D printf("DEBUG 0x%x %d\n", op1, id_exe.shamt);
             break;
 
         case FUNCT_SLT:
