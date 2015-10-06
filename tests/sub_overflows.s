@@ -19,6 +19,7 @@ sub $v0, $s1, $t2
 sub $v1, $s1, $s2
 
 nop
-syscal
+syscall
 nop
 nop
+

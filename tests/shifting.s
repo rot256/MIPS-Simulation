@@ -12,3 +12,9 @@ srl $t5, $t1, 8
 # t3 = 3
 # t4 = -2147483648
 # t5 = 0
+
+nop
+syscall
+nop
+nop
+

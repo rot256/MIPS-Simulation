@@ -10,6 +10,7 @@ slt $t4, $t2, $t1
 # t3 = 1
 # t4 = 0
 nop
-syscal
+syscall
 nop
 nop
+

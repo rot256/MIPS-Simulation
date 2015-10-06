@@ -43,3 +43,9 @@ Nofall:
 # t2 should be 60
 # t3 should be 70
 # t4, t5 undefined
+
+nop
+syscall
+nop
+nop
+

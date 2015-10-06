@@ -13,7 +13,7 @@ add $t7, $t1, $t1
 addu $t2, $t2, $t3
 
 nop
-syscal
+syscall
 nop
 nop
 

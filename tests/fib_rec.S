@@ -52,3 +52,9 @@ fib_epi:
     lw      $ra, ($sp)
     addu    $sp, $sp, 4
     jr      $ra
+
+nop
+syscall
+nop
+nop
+
