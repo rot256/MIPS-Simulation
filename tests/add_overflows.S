@@ -13,7 +13,9 @@ add $t7, $t1, $t1
 addu $t2, $t2, $t3
 
 nop
-#syscall
+syscal
+nop
+nop
 
 ## Expected outcome
 # t2 overflowed to 0x80007ffe

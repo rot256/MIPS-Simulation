@@ -12,8 +12,6 @@ addi $t6, $t1, 32767
 add $t7, $t1, $t1
 addu $t2, $t2, $t3
 
-nop
-#syscall
 
 ## Expected outcome
 # t2 overflowed to 0x80007ffe
@@ -21,3 +19,7 @@ nop
 # t1, t5 are undefined
 # t6 has the value 0x0000fffe
 # t7 has the value 0x0000fffe
+nop
+syscal
+nop
+nop
