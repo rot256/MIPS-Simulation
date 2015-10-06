@@ -40,3 +40,11 @@ All hazards which can be mitigated using forwarding is handled in the **forward(
 Load-use hazards are handled directly in **interp_if()**
 
 ## Tests
+
+In the tests folder. We have a bunch of tests checking if the basic instructions work as intended.
+Some of the things we also test for are:
+
+
+* We test whether our simulate correctly reports errors, when add,addi,sub overflow.
+* We test whether instructions in the branch delay slot, gets correctly executed.
+* We test if the basic instructions works as intended
