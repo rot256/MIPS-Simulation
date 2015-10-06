@@ -9,7 +9,7 @@ sub $t3, $t1, $t2
 ## Go under 0
 sub $t4, $zero, $t2
 ## Overflow causes exception
-#sub $t6, $t5, $t1
+sub $t6, $t5, $t1
 
 # Negative from positive
 sub $t7, $t1, $s2

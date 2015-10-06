@@ -5,7 +5,7 @@ li $t2, 32767
 li $t3, 2147483647
 
 addiu $t4, $t3, 32767
-#addi $t5, $t3, 32767
+addi $t5, $t3, 32767
 addi $t6, $t1, 32767
 
 #add $t1, $t1, $t3
@@ -13,9 +13,7 @@ add $t7, $t1, $t1
 addu $t2, $t2, $t3
 
 nop
-syscal
-nop
-nop
+#syscall
 
 ## Expected outcome
 # t2 overflowed to 0x80007ffe
