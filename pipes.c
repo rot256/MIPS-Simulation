@@ -78,8 +78,10 @@ void interp_if() {
         }
     }
 
+    // "Branch hazards"
+    // NOTE : Since we branch in ID, we need to detect if the branch depends on a result from EX or MEM
+    // If this is the case we insert a bubble
     if (GET_OPCODE(if_id.inst) == OPCODE_BEQ || GET_OPCODE(if_id.inst) == OPCODE_BNE) {
-        D printf("DEBUG   - Possible branch hazard\n");
         if (GET_RS(if_id.inst) == id_exe.rt && id_exe.rt != 0) {
             D printf("DEBUG   - Branch hazard RS\n");
             if_id.inst = 0x0;
@@ -553,7 +555,7 @@ int forward() {
         }
 
         // Check RT
-        else if (exe_mem.reg_dst == id_exe.rt) {
+        if (exe_mem.reg_dst == id_exe.rt) {
             D printf("DEBUG   - EX hazard : Forward ALURes to RTValue [%d]\n", exe_mem.reg_dst);
             id_exe.rt_value = exe_mem.alu_res;
         }
@@ -573,7 +575,7 @@ int forward() {
             }
         }
         // Check RT
-        else if (mem_wb.reg_dst == id_exe.rt && exe_mem.reg_dst != id_exe.rt) {
+        if (mem_wb.reg_dst == id_exe.rt && exe_mem.reg_dst != id_exe.rt) {
             if (mem_wb.mem_to_reg) {
                 D printf("DEBUG   - MEM hazard : Forward ReadData to RTValue [%d]\n", mem_wb.reg_dst);
                 id_exe.rt_value = mem_wb.read_data;

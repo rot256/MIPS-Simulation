@@ -60,7 +60,7 @@ def test():
         if post:
             print 'Using following post conditions:'
             for p in post:
-                print p
+                print '\t', p
         else:
             print 'WARNING : NO POST CONDITIONS FOR:', binary
 
@@ -89,7 +89,10 @@ def test():
                 with open('log.txt', 'w') as f:
                     f.write(out)
                 return
+        print ''
+
     print 'All tests passed'
+    print 'You are winner!!!'
 
 if len(sys.argv) != 3:
     print 'Usage: ' + sys.argv[0] + ' SimulatorPath TestFolder'
