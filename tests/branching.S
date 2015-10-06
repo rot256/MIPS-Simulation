@@ -1,7 +1,11 @@
+# Post
+# t1 = 0x28
+# t2 = 0x3c
+# t3 = 0x46
+# t4 = 0x50
+# t5 = 0x64
 
 .set noreorder
-
-addiu $t2, $zero, 50 
 
 li $t1, 50
 li $t2, 50
@@ -44,16 +48,7 @@ addiu $t5, $zero, 100
 
 Nofall:
 
-
-
-# Expected outcome
-# t1 should be 40
-# t2 should be 60
-# t3 should be 70
-# t4, t5 undefined
-
 nop
 syscall
 nop
 nop
-

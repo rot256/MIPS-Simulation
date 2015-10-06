@@ -73,6 +73,28 @@ void interp_if() {
         }
     }
 
+    if (GET_OPCODE(if_id.inst) == OPCODE_BEQ || GET_OPCODE(if_id.inst) == OPCODE_BNE) {
+        D printf("DEBUG   - Possible branch hazard\n");
+        if (GET_RS(if_id.inst) == id_exe.rt && id_exe.rt != 0) {
+            D printf("DEBUG   - Branch hazard RS\n");
+            if_id.inst = 0x0;
+            return;
+        } else if (GET_RT(if_id.inst) == id_exe.rt && id_exe.rt != 0) {
+            D printf("DEBUG   - Branch hazard RT\n");
+            if_id.inst = 0x0;
+            return;
+        }
+
+        if (GET_RS(if_id.inst) == exe_mem.rt && exe_mem.rt != 0) {
+            D printf("DEBUG   - Branch hazard RS\n");
+            if_id.inst = 0x0;
+            return;
+        } else if (GET_RT(if_id.inst) == exe_mem.rt && exe_mem.rt != 0) {
+            D printf("DEBUG   - Branch hazard RS\n");
+            if_id.inst = 0x0;
+            return;
+        }
+    }
     // Carry next PC
     PC = if_id.next_pc;
     instr_cnt++;
@@ -343,6 +365,8 @@ int alu() {
     // Select operands
     uint32_t op1 = id_exe.rs_value;
     uint32_t op2 = id_exe.alu_src ? id_exe.sign_ext_imm : id_exe.rt_value;
+    D printf("DEBUG   - RT = [%d]\n", id_exe.rt);
+    D printf("DEBUG   - RD = [%d]\n", id_exe.rs);
     D printf("DEBUG   - SrcVal1 = [0x%x]\n", op1);
     D printf("DEBUG   - SrcVal2 = [0x%x]\n", op2);
     D printf("DEBUG   - ALUSrc  = [%d]\n", id_exe.alu_src);
@@ -384,7 +408,6 @@ int alu() {
         case FUNCT_SLL:
             D printf("DEBUG   - OP = [FUNCT_SLL] (Shift left)\n");
             exe_mem.alu_res = op2 << id_exe.shamt;
-            D printf("DEBUG 0x%x %d\n", op1, id_exe.shamt);
             break;
 
         case FUNCT_SLT:
@@ -500,6 +523,8 @@ void interp_wb() {
 
     regs[mem_wb.reg_dst] = mem_wb.mem_to_reg ? mem_wb.read_data : mem_wb.alu_res;
 
+    D printf("DEBUG   - Wrote 0x%x to register %d\n", regs[mem_wb.reg_dst], mem_wb.reg_dst);
+
     return;
 }
 
@@ -520,9 +545,21 @@ int forward() {
         }
 
         // Check RT
-        if (exe_mem.reg_dst == id_exe.rt) {
+        else if (exe_mem.reg_dst == id_exe.rt) {
             D printf("DEBUG   - EX hazard : Forward ALURes to RTValue [%d]\n", exe_mem.reg_dst);
             id_exe.rt_value = exe_mem.alu_res;
+        }
+    }
+
+    if (exe_mem.reg_write && exe_mem.reg_dst != 0) {
+        // Check RS
+        if(id_exe.reg_dst == id_exe.rs) {
+            D printf("DEBUG   - EX hazard : Forward ALURes to RSValue [%d]\n", exe_mem.reg_dst);
+        }
+
+        // Check RT
+        else if (id_exe.reg_dst == id_exe.rt) {
+            D printf("DEBUG   - EX hazard : Forward ALURes to RTValue [%d]\n", exe_mem.reg_dst);
         }
     }
 
@@ -540,7 +577,7 @@ int forward() {
             }
         }
         // Check RT
-        if (mem_wb.reg_dst == id_exe.rt && exe_mem.reg_dst != id_exe.rt) {
+        else if (mem_wb.reg_dst == id_exe.rt && exe_mem.reg_dst != id_exe.rt) {
             if (mem_wb.mem_to_reg) {
                 D printf("DEBUG   - MEM hazard : Forward ReadData to RTValue [%d]\n", mem_wb.reg_dst);
                 id_exe.rt_value = mem_wb.read_data;
