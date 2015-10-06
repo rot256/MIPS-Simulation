@@ -1,3 +1,7 @@
+# Post
+# t1 = 0x28
+# t2 = 0x3c
+# t3 = 0x46
 
 .set noreorder
 
