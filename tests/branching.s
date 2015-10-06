@@ -1,23 +1,29 @@
+
+.set noreorder
+
+addiu $t2, $zero, 50 
+
 li $t1, 50
 li $t2, 50
 beq $t1, 50, Branch1
-li $t2, 60
-li $t2, 50
+addiu $t2, $zero, 60
+addiu $t2, $zero, 50
 nop
 nop
 b Nofall
 
 Branch1:
+
 bne $t2, 50, Branch2
-li $t1, 40
-li $t1, 30
+addiu $t1, $zero, 40
+addiu $t1, $zero, 30
 
 nop
 nop
 b Nofall
 
 Branch2:
-li $t3, 70
+addiu $t3, $zero, 70
 beq $t1, 40, First
 beq $t4, 80, Second
 
@@ -26,13 +32,13 @@ nop
 b Nofall
 
 First:
-li $t4, 80
+addiu $t4, $zero, 80
 nop
 nop
 b Nofall
 
 Second:
-li $t5, 100
+addiu $t5, $zero, 100
 
 Nofall:
 
