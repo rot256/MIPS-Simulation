@@ -1,5 +1,5 @@
-
 # SegfaultSimulator
+
 ```
  _____             __            _ _   _____ _                 _       _
 /  ___|           / _|          | | | /  ___(_)               | |     | |
@@ -9,50 +9,39 @@
 \____/ \___|\__, |_| \__,_|\__,_|_|\__\____/|_|_| |_| |_|\__,_|_|\__,_|\__\___/|_|
              __/ |
             |___/
-
- ```
- 
-## The MIPS32-Simulator
-
-### What works
-
-All of the tests in the folder "tests" are being simulated correctly. 
-So all of the defined in mips32.h should simulate correctly (see "testing" below).
-
-### What doesn't work
-
-Currently syscall will only cause the simulator to stop. And not perform an actual simulation of the syscall.
-
-### Design choices
-
-While we were debugging, we used a rather hackish way to quickly add lines we only wanted to run if debug was enabled.
-So that instead of having to write
-```c
-#ifdef
- DEBUG CODE
-#endif
-```
-We could just write
-```c
-D CODE
 ```
 
-We also chose to implement the instructions a one big switch statement (because lazy). 
+## Design choices
 
-### Testing
+### Overflow detection
 
-In SegfaultSimulator (SS) we focused on great tests and exceptionally high code quality,
-we therefore have thorough test of every possible edge case with systematic unit tests.
-In all seriousness - there are 3 tests.
+ADD and SUB implements overflow detection, if an overflow in encountered in either of these instructions the program terminates with an error.
 
-    fib_rec.S    : A recursive implementation of fibonacci to test the stack (Load Word & Store Word)
-    arithmetic.S : Some shitty attempt at implementing a LFSR
-    jumps.S      : Testing branching.
+### Branching
 
-Our tests are pretty complex - because we were too lazy to test every instruction seperatly.
-All three tests are passed, but this is by no means a garantee that SS will not live up to its name.
+We handle all I-Type branching in the ID stage (which reflects many implementations) this means that we avoid flushing to some degree since only the delay slot is fetched.
+However we do not avoid flushing all together due to the JR instruction, which is an R-Type instruction which we process in EX (unlike the walkthough implementation - which mixes I- and R-Type instructions in ID).
+When JR is in EX, its delayslot instruction is in ID (not IF), which means that we will get 2 delay slots, to avoid this we have no choice but to insert a nop.
 
-### Easter eggs
+To do this we created the "flush" variable, this is outside the pipelined registers, since it is not a register - its models a control line (its value is reset every cycle).
+"flush" simply signals that IF should load a NOP insted of the next instruction - the same way we do for Load-Use hazards.
 
-- Added XOR (and XORI) instructions
-- Random segfaults (please consider these easter eggs to)
+Another side effect of this design is that the edge case for JAL is avoided:
+
+	"You will need to handle another case in addition to those discussed in [COD5e]. A jal
+	instruction might be on it’s way to the WB stage, when we hit a jr instruction in the ID
+	stage. In this case, the mem_wb.alu_res should be forwarded to id_ex.jump_target instead of id_ex.rs_value." - Assignment
+
+Since we interped JR in EX (to seperate I-Type and R-Type completely).
+
+A possible catch-ya would be if the delay slot for a JR instruction held a J (or JAL or Branch).
+But this is nicely handled by the way the pipeline is run, if the delay slot contains a branch or jump the target address could be messed up - in the real world we would need a mux to selected the target from the delay slot instruction.
+But in our implementation interp_id() is run after interp_exe(), and as such interp_id() overrides the jump address, yielding the desired effect.
+Thus we avoid this edge case.
+
+### Hazards
+
+All hazards which can be mitigated using forwarding is handled in the **forward()** function.
+Load-use hazards are handled directly in **interp_if()**
+
+## Tests
