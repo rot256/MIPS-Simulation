@@ -1,10 +1,12 @@
 #Testing overflow with the different adds
 #This tests add, addu, addi, addiu, li, ori, lui
 # Post
-# t2 = 0x7ffe
-# t4 = 0x7ffe
+# t2 = 0x80007ffe
+# t3 = 0x7fffffff
+# t4 = 0x80007ffe
 # t6 = 0xfffe
 # t7 = 0xfffe
+
 li $t1, 32767
 li $t2, 32767
 li $t3, 2147483647

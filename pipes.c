@@ -229,11 +229,7 @@ int interp_control() {
             id_exe.mem_write = false;
             id_exe.reg_write = true;
             id_exe.mem_to_reg = false;              // We want the output of the ALU
-
-            // Insert raw immidate into RT (kinda hackish)
-            id_exe.alu_src = false;                 // Source is imm (but not sign extended)
-            id_exe.rt_value = GET_IMM(if_id.inst);  // Raw immidate
-            id_exe.rt = 0;                          // Avoid hazard detection fucking us over
+            id_exe.alu_src = true;                  // Source is imm
 
             id_exe.funct = FUNCT_SLL;               // Logical shift
             id_exe.shamt = 16;                      // Shift by 16
