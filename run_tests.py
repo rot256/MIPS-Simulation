@@ -55,7 +55,7 @@ def test():
                     break
                 if post_mode:
                     post.append(line[1:].strip())
-        
+
         # Print extracted post conditions
         if post:
             print 'Using following post conditions:'
@@ -66,11 +66,11 @@ def test():
 
         # Run
         args = [
-            sys.argv[1] if '/' in sys.argv[1] else './' + sys.argv[1], 
-            'dummy.cfg.old', 
+            sys.argv[1] if '/' in sys.argv[1] else './' + sys.argv[1],
+            'dummy.cfg.old',
             binary
         ]
-        prc = IPopen(args, prompts=['Press enter', 'Failed'])
+        prc = IPopen(args, prompts=['Press enter', 'Failed', 'ra = '])
         text = prc.correspond('\n'*10)
         out = text
         while 'Press enter' in text:

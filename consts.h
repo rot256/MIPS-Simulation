@@ -5,7 +5,7 @@
 #define CONSTS_H
 
 // Debugging
-#define DEBUG
+// #define DEBUG
 #ifdef DEBUG
 #define D
 #else
