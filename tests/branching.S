@@ -11,6 +11,7 @@ addiu $t2, $zero, 50
 nop
 nop
 b Nofall
+nop
 
 Branch1:
 
@@ -25,6 +26,7 @@ b Nofall
 Branch2:
 addiu $t3, $zero, 70
 beq $t1, 40, First
+nop
 beq $t4, 80, Second
 
 nop
