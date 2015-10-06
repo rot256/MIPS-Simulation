@@ -109,6 +109,9 @@ int main(int argc, char* argv[]) {
     } else if (ret == ERROR_UNKNOWN_FUNCT) {
         printf("Found unknown funct code!\n");
         exit(ret);
+    } else if (ret == ERROR_OVERFLOW) {
+        printf("Encountered overflow!\n");
+        exit(ret);
     } else if (ret < 0) {
         printf("Encountered unhandled error! [%d]\n", ret);
         exit(ret);
