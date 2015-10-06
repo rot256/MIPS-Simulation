@@ -23,6 +23,8 @@ We handle all I-Type branching in the ID stage (which reflects many implementati
 However we do not avoid flushing all together due to the JR instruction, which is an R-Type instruction which we process in EX (unlike the walkthough implementation - which mixes I- and R-Type instructions in ID).
 When JR is in EX, its delayslot instruction is in ID (not IF), which means that we will get 2 delay slots, to avoid this we have no choice but to insert a nop.
 
+But because an instruction might follow immediately after a branch. We need to handle this case. Since it means that we won't have the result from the instruction before we branch, to fix this we forward the result from the instruction. By insertiing a nop.
+
 To do this we created the "flush" variable, this is outside the pipelined registers, since it is not a register - its models a control line (its value is reset every cycle).
 "flush" simply signals that IF should load a NOP insted of the next instruction - the same way we do for Load-Use hazards.
 
