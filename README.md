@@ -48,3 +48,5 @@ Some of the things we also test for are:
 * We test whether our simulate correctly reports errors, when add,addi,sub overflow.
 * We test whether instructions in the branch delay slot, gets correctly executed.
 * We test if the basic instructions works as intended
+
+To be able to test more effectively we also. Made a python script to do automated testing, of our tests. It works by comparing the postconditions in our asssembly file. To the output of our simulutor
