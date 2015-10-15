@@ -48,7 +48,7 @@ int interp() {
     int ret = 0;
     while(ret == 0) {
         D printf("\n\n\n");
-        D printf("DEBUG : Cycle %lu \n", cycles);
+        D printf("DEBUG : Cycle %zu \n", cycles);
         ret = cycle();
         D printf("DEBUG : Press enter to continue...");
         D getchar();
