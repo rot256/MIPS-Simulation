@@ -40,11 +40,11 @@
 // Registers
 uint32_t regs[32]; // General purpose
 uint32_t PC;       // Program counter
+
+// Counters
 size_t instr_cnt;  // Number of instructions executed
 size_t cycles;     // Number of cycles executed
-
-// Memory
-size_t alloc;
-unsigned char* mem;
+size_t hits;       // Number of cache hits
+size_t misses;     // Number of cache misses
 
 #endif

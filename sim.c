@@ -2,10 +2,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <errno.h>
-#include "elf.h"
 #include "mips32.h"
 #include "consts.h"
 #include "pipes.h"
+#include "mem.h"
 
 // Print simulation status
 void print_status() {
@@ -27,20 +27,34 @@ void print_all_registers() {
 
 // Read config file stream
 int read_config_stream(FILE* f) {
+    // Load registers
     for (int i = 8; i < 16; i++) {
-	if (fscanf(f, "%u", &regs[i]) != 1) {
-	    if (errno == 0) return ERROR_INVALID_CONFIG;
-	    return ERROR_IO_ERROR;
-	}
+	    if (fscanf(f, "%u", &regs[i]) != 1) {
+	        if (errno == 0) return ERROR_INVALID_CONFIG;
+	        return ERROR_IO_ERROR;
+	    }
+    }
+    return 0;
+}
+
+// Read cache config
+int read_cache_config(FILE *f, struct cache *c) {
+    if (fscanf(f, "%u %u %u", &c->n_sets, &c->n_blocks, &c->n_words_per_block) != 1) {
+        if (errno == 0) return ERROR_INVALID_CONFIG;
+        return ERROR_IO_ERROR;
     }
     return 0;
 }
 
 // Read config
 int read_config(const char *path) {
+    int ret;
     FILE* f = fopen(path, "r");
     if (f == NULL) return ERROR_IO_ERROR;
-    if (read_config_stream(f) != 0) return ERROR_IO_ERROR;
+    if ((ret = read_config_stream(f))) return ret;
+    if ((ret = read_cache_config(f, &icache))) return ret;
+    if ((ret = read_cache_config(f, &dcache))) return ret;
+    if ((ret = read_cache_config(f, &l2cache))) return ret;
     return fclose(f);
 }
 
@@ -78,25 +92,11 @@ int main(int argc, char* argv[]) {
         exit(ret);
     }
 
-    // Parse elf file
-    alloc = KB*640;
-    mem = (unsigned char*) malloc(alloc);
-    while(1) {
-        ret = elf_dump(argv[2], &PC, mem, alloc);
-        if (ret == ELF_ERROR_OUT_OF_MEM) {
-            alloc *= 2;
-            mem = (unsigned char*) realloc(mem, alloc);
-            continue;
-        }
-        if (ret != 0) {
-            printf("Failed to parse elf file!");
-            exit(ERROR_INVALID_ELF);
-        }
-        break;
-    }
+    // Setup memory
+    if ((ret = mem_init(argv[2], &PC))) return ret;
 
     // Set stack pointer
-    regs[29] = alloc + MIPS_RESERVE + sizeof(uint32_t);
+    regs[29] = MEMSZ + MIPS_RESERVE + sizeof(uint32_t);
     D print_status();
 
     // Run

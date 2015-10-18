@@ -1,5 +1,5 @@
-CC = gcc
-CFLAGS = -Werror -Wall -Wextra -pedantic -std=c11
+CC := gcc
+CFLAGS := -Werror -Wall -Wextra -pedantic -std=c11
 
 .PHONY: clean
 .PHONY: all
@@ -11,10 +11,13 @@ all: sim
 debug: CFLAGS += -ggdb
 debug: sim
 
-sim: mips32.h consts.h elf.o pipes.o sim.c
-	$(CC) $(CFLAGS) -o sim elf.o pipes.o sim.c
+sim: elf.o mem.o pipes.o sim.c
+	$(CC) $(CFLAGS) -o sim elf.o mem.o pipes.o sim.c
 
-pipes.o: mips32.h consts.h
+mem.o: mem.c mem.h
+	$(CC) $(CFLAGS) -c mem.c mem.h
+
+pipes.o: mem.o pipes.c pipes.h
 	$(CC) $(CFLAGS) -c pipes.c pipes.h
 
 elf.o: elf.c elf.h

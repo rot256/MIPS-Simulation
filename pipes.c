@@ -2,6 +2,7 @@
 #include "mips32.h"
 #include "consts.h"
 #include "stdio.h"
+#include "mem.h"
 
 static struct preg_if_id   if_id;
 static struct preg_id_exe  id_exe;
@@ -54,7 +55,7 @@ void interp_if() {
     D printf("DEBUG : Pipeline : Instruction Fetch\n");
 
     if_id.next_pc = PC + INSTRUCTION_SIZE;
-    if_id.inst = GET_BIGWORD(mem, PC);
+    inst_read(PC, &if_id.inst); // TODO : Check return value
 
     if (flush) {
         D printf("DEBUG   - Insert NOP\n");
@@ -508,13 +509,13 @@ void interp_mem() {
 
     // Read from memory
     if (exe_mem.mem_read) {
-        mem_wb.read_data = GET_BIGWORD(mem, exe_mem.alu_res);
+        data_read(exe_mem.alu_res, &mem_wb.read_data); // TODO : Check return value
         D printf("DEBUG   - Read value 0x%x from address 0x%x [LW]\n", mem_wb.read_data, exe_mem.alu_res);
     }
 
     // Write to memory
     if (exe_mem.mem_write) {
-        SET_BIGWORD(mem, exe_mem.alu_res, exe_mem.rt_value);
+        data_write(exe_mem.alu_res, exe_mem.rt_value); // TODO : Check return value
         D printf("DEBUG   - Store value 0x%x into 0x%x [SW]\n", exe_mem.rt_value, exe_mem.alu_res);
     }
     return;
