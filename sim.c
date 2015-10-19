@@ -39,7 +39,7 @@ int read_config_stream(FILE* f) {
 
 // Read cache config
 int read_cache_config(FILE *f, struct cache *c) {
-    if (fscanf(f, "%u %u %u", &c->n_sets, &c->n_blocks, &c->n_words_per_block) != 1) {
+    if (fscanf(f, "%u %u %u", &c->n_sets, &c->n_blocks, &c->n_words_per_block) < 0) {
         if (errno == 0) return ERROR_INVALID_CONFIG;
         return ERROR_IO_ERROR;
     }
@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
     if ((ret = mem_init(argv[2], &PC))) return ret;
 
     // Set stack pointer
-    regs[29] = MEMSZ + MIPS_RESERVE + sizeof(uint32_t);
+    regs[29] = LAST_MEM_ADDR;
     D print_status();
 
     // Run

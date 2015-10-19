@@ -99,8 +99,11 @@ if len(sys.argv) != 3:
     exit(0)
 
 with open('dummy.cfg.old', 'w') as f:
-    [f.write('0\n') for _ in range(9)]
+    for _ in range(9):
+        f.write('0\n')
+    f.write('10 10 10\n')
+    f.write('10 10 10\n')
+    f.write('10 10 10\n')
 
 test()
-
 os.remove('dummy.cfg.old')

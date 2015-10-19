@@ -6,7 +6,8 @@
 #define MEM_H
 
 // You win, we make it static
-#define MEMSZ 640 * KB
+#define MEMSZ (640 * KB)
+#define LAST_MEM_ADDR (MEMSZ + MIPS_RESERVE - sizeof(uint32_t))
 
 struct cache {
     uint32_t n_sets;

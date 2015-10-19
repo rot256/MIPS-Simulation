@@ -28,20 +28,20 @@ int cycle() {
 
     // Run pipeline
     interp_wb();
-    interp_mem();
+    if ((ret = interp_mem())) return ret;
     if ((ret = interp_exe())) return ret;
     if ((ret = interp_id())) return ret;
-    interp_if();
+    if ((ret = interp_if())) return ret;
 
     // Hazard detection
     forward();
 
     // Update PC (could be moved to IF)
     if (jump)  {
-        D printf("DEBUG : Cycle : Perform jump : Target=[0x%x]\n", jump_target);
         #ifdef DEBUG
+        printf("DEBUG : Cycle : Perform jump : Target=[0x%x]\n", jump_target);
         if (jump_target % 4 != 0) {
-            D printf("DEBUG : Cycle : Jump to invalid address!\n");
+            printf("DEBUG : Cycle : Jump to invalid address!\n");
             exit(-1);
         }
         #endif
@@ -51,17 +51,20 @@ int cycle() {
 }
 
 // PIPELINE : Instruction fetch
-void interp_if() {
+int interp_if() {
     D printf("DEBUG : Pipeline : Instruction Fetch\n");
 
-    if_id.next_pc = PC + INSTRUCTION_SIZE;
-    inst_read(PC, &if_id.inst); // TODO : Check return value
-
+    // Check if should flush
     if (flush) {
         D printf("DEBUG   - Insert NOP\n");
         if_id.inst = 0x0;
-        return;
+        return 0;
     }
+
+    // Read instruction at PC
+    if_id.next_pc = PC + INSTRUCTION_SIZE;
+    int ret = inst_read(PC, &if_id.inst);
+    if(ret) return ret;
 
     // Check Load-use hazards
     // NOTE : This is more strict than it need be, for instance an I-Type instruction will
@@ -71,11 +74,11 @@ void interp_if() {
         if (GET_RS(if_id.inst) == id_exe.rt) {
             D printf("DEBUG   - Load-use hazard detected for RS\n");
             if_id.inst = 0x0;
-            return;
+            return 0;
         } else if (GET_RT(if_id.inst) == id_exe.rt) {
             D printf("DEBUG   - Load-use hazard detected for RT\n");
             if_id.inst = 0x0;
-            return;
+            return 0;
         }
     }
 
@@ -86,29 +89,30 @@ void interp_if() {
         if (GET_RS(if_id.inst) == id_exe.rt && id_exe.rt != 0) {
             D printf("DEBUG   - Branch hazard RS\n");
             if_id.inst = 0x0;
-            return;
+            return 0;
         } else if (GET_RT(if_id.inst) == id_exe.rt && id_exe.rt != 0) {
             D printf("DEBUG   - Branch hazard RT\n");
             if_id.inst = 0x0;
-            return;
+            return 0;
         }
 
         if (GET_RS(if_id.inst) == exe_mem.rt && exe_mem.rt != 0) {
             D printf("DEBUG   - Branch hazard RS\n");
             if_id.inst = 0x0;
-            return;
+            return 0;
         } else if (GET_RT(if_id.inst) == exe_mem.rt && exe_mem.rt != 0) {
             D printf("DEBUG   - Branch hazard RS\n");
             if_id.inst = 0x0;
-            return;
+            return 0;
         }
     }
+
     // Carry next PC
     PC = if_id.next_pc;
     instr_cnt++;
 
     D printf("DEBUG   - Next PC 0x%x\n", PC);
-    return;
+    return 0;
 }
 
 // CONTROL :
@@ -495,7 +499,7 @@ int interp_exe() {
 }
 
 // PIPELINE : Memory
-void interp_mem() {
+int interp_mem() {
     D printf("DEBUG : Pipeline : Memory\n");
     D printf("DEBUG   - ALURes = [0x%x]\n", exe_mem.alu_res);
 
@@ -509,16 +513,19 @@ void interp_mem() {
 
     // Read from memory
     if (exe_mem.mem_read) {
-        data_read(exe_mem.alu_res, &mem_wb.read_data); // TODO : Check return value
+        int ret = data_read(exe_mem.alu_res, &mem_wb.read_data);
+        if(ret != 0) return ret;
         D printf("DEBUG   - Read value 0x%x from address 0x%x [LW]\n", mem_wb.read_data, exe_mem.alu_res);
     }
 
     // Write to memory
     if (exe_mem.mem_write) {
-        data_write(exe_mem.alu_res, exe_mem.rt_value); // TODO : Check return value
+        int ret = data_write(exe_mem.alu_res, exe_mem.rt_value); // TODO : Check return value
+        if(ret != 0) return ret;
         D printf("DEBUG   - Store value 0x%x into 0x%x [SW]\n", exe_mem.rt_value, exe_mem.alu_res);
     }
-    return;
+
+    return 0;
 }
 
 // PIPELINE : Writeback
