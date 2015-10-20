@@ -25,6 +25,8 @@ void print_all_registers() {
     for (int i = 0; i < 8; i++) printf("s%d = 0x%x\n", i, regs[i+16]);
 }
 
+
+
 // Read config file stream
 int read_config_stream(FILE* f) {
     // Load registers
@@ -39,11 +41,15 @@ int read_config_stream(FILE* f) {
 
 // Read cache config
 int read_cache_config(FILE *f, struct cache *c) {
+    // Read config
     if (fscanf(f, "%u %u %u", &c->n_sets, &c->n_blocks, &c->n_words_per_block) < 0) {
         if (errno == 0) return ERROR_INVALID_CONFIG;
         return ERROR_IO_ERROR;
     }
-    return 0;
+    D printf("DEBUG   - Sets = [%u]\n", c->n_sets);
+    D printf("DEBUG   - Blocks = [%u]\n", c->n_blocks);
+    D printf("DEBUG   - Words Per Block = [%u]\n", c->n_words_per_block);
+    return cache_init(c);
 }
 
 // Read config
@@ -52,9 +58,13 @@ int read_config(const char *path) {
     FILE* f = fopen(path, "r");
     if (f == NULL) return ERROR_IO_ERROR;
     if ((ret = read_config_stream(f))) return ret;
+    D printf("DEBUG : Setup instruction cache\n");
     if ((ret = read_cache_config(f, &icache))) return ret;
+    D printf("DEBUG : Setup data cache\n");
     if ((ret = read_cache_config(f, &dcache))) return ret;
+    D printf("DEBUG : Setup shared l2 cache\n");
     if ((ret = read_cache_config(f, &l2cache))) return ret;
+    D printf("\n\n\n");
     return fclose(f);
 }
 
@@ -96,7 +106,7 @@ int main(int argc, char* argv[]) {
     if ((ret = mem_init(argv[2], &PC))) return ret;
 
     // Set stack pointer
-    regs[29] = LAST_MEM_ADDR;
+    regs[29] = END_OF_MEM;
     D print_status();
 
     // Run
@@ -104,18 +114,17 @@ int main(int argc, char* argv[]) {
     print_status();
     if (ret == ERROR_UNKNOWN_OPCODE) {
         printf("Found unknown opcode!\n");
-        exit(ret);
     } else if (ret == ERROR_UNKNOWN_FUNCT) {
         printf("Found unknown funct code!\n");
-        exit(ret);
     } else if (ret == ERROR_OVERFLOW) {
         printf("Encountered overflow!\n");
-        exit(ret);
+    } else if (ret == ERROR_INVALID_MEM_ADDR){
+        printf("Accesssing invalid memory address\n");
     } else if (ret < 0) {
         printf("Encountered unhandled error! [%d]\n", ret);
-        exit(ret);
     } else if (ret != SIG_HALT_PROGRAM) {
         printf("Terminated with signal: [%d]\n", ret);
+        ret = 0;
     }
-    return 0;
+    return ret;
 }

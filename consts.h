@@ -19,14 +19,14 @@
 #define SIG_HALT_PROGRAM 1
 
 // Error codes
-#define ERROR_IO_ERROR         -1
-#define ERROR_INVALID_CONFIG   -2
-#define ERROR_INVALID_ELF      -3
-#define ERROR_UNKNOWN_OPCODE   -4
-#define ERROR_UNKNOWN_FUNCT    -5
-#define ERROR_OVERFLOW         -6
-#define ERROR_INVALID_MEM_ADDR -7
-
+#define ERROR_IO_ERROR           -1
+#define ERROR_INVALID_CONFIG     -2
+#define ERROR_INVALID_ELF        -3
+#define ERROR_UNKNOWN_OPCODE     -4
+#define ERROR_UNKNOWN_FUNCT      -5
+#define ERROR_OVERFLOW           -6
+#define ERROR_INVALID_MEM_ADDR   -7
+#define ERROR_INVALID_CACHE_SIZE -8
 // Index of special registers
 #define r_at 1
 #define r_v0 2

@@ -7,13 +7,13 @@
 
 // You win, we make it static
 #define MEMSZ (640 * KB)
-#define LAST_MEM_ADDR (MEMSZ + MIPS_RESERVE - sizeof(uint32_t))
+#define END_OF_MEM (MEMSZ + MIPS_RESERVE)
+#define N_BYTES(cache) (cache->n_blocks * cache->n_words_per_block * sizeof(uint32_t))
 
 struct cache {
     uint32_t n_sets;
     uint32_t n_blocks;
     uint32_t n_words_per_block;
-
     struct block *blocks;
     unsigned char *data;
 };
@@ -32,8 +32,9 @@ struct cache icache;
 struct cache dcache;
 struct cache l2cache;
 
-// Setup memory
+// Setup memory and cache
 int mem_init(const char *path, uint32_t *PC);
+int cache_init(struct cache *c);
 
 // Cache operations
 int inst_read(uint32_t addr, uint32_t *read_inst);
