@@ -42,12 +42,12 @@ int read_config_stream(FILE* f) {
 // Read cache config
 int read_cache_config(FILE *f, struct cache *c) {
     // Read config
-    if (fscanf(f, "%u %u %u", &c->n_sets, &c->n_blocks, &c->n_words_per_block) < 0) {
+    if (fscanf(f, "%u,%u,%u", &c->n_sets, &c->n_blocks_per_set, &c->n_words_per_block) < 0) {
         if (errno == 0) return ERROR_INVALID_CONFIG;
         return ERROR_IO_ERROR;
     }
     D printf("DEBUG   - Sets = [%u]\n", c->n_sets);
-    D printf("DEBUG   - Blocks = [%u]\n", c->n_blocks);
+    D printf("DEBUG   - Blocks = [%u]\n", c->n_blocks_per_set);
     D printf("DEBUG   - Words Per Block = [%u]\n", c->n_words_per_block);
     return cache_init(c);
 }

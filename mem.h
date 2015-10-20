@@ -8,20 +8,20 @@
 // You win, we make it static
 #define MEMSZ (640 * KB)
 #define END_OF_MEM (MEMSZ + MIPS_RESERVE)
-#define N_BYTES(cache) (cache->n_blocks * cache->n_words_per_block * sizeof(uint32_t))
 
 struct cache {
-    uint32_t n_sets;
-    uint32_t n_blocks;
-    uint32_t n_words_per_block;
+    uint32_t n_sets;            // Number of sets
+    uint32_t n_blocks_per_set;  //
+    uint32_t n_words_per_block; //
     struct block *blocks;
-    unsigned char *data;
 };
 
 struct block {
-    bool valid;
-    bool modified;
-    uint32_t tag;
+    bool valid;          // Block references valid data?
+    bool modified;       // Block modified?
+    uint32_t age;        // When was the block inserted (higher = older)
+    uint32_t tag;        // Upper part of address
+    unsigned char *data; // Data segment of block
 };
 
 // Caches
