@@ -111,7 +111,7 @@ uint32_t cache_get(struct cache c, uint32_t addr) {
         D printf("DEBUG : Cache : Not in cache, read from lower\n");
         res = cache_load(c, addr);
     } else {
-        D printf("DEBUG : Cache : We have a hit scotty, keep em coming\n");
+        D printf("DEBUG : Cache : We have a hit scotty!\n");
         hits++;
     }
     memcpy(&val, res->data + GET_BLOCK(c, addr), sizeof(uint32_t)); // TODO : Load half-words and bytes also
@@ -133,7 +133,7 @@ struct block* cache_update(struct cache c, uint32_t addr, uint32_t val) {
     return res;
 }
 
-// Load a block from lower memory into the cache
+// Load a block from lower memory into the cache (and returns the block)
 // Works for both L2, ICache and DCache
 struct block* cache_load(struct cache c, uint32_t addr) {
     D printf("DEBUG : Cache : Load memory into cache\n");
@@ -165,7 +165,7 @@ struct block* cache_load(struct cache c, uint32_t addr) {
         // Write to lower memory (L2-cache or main memory)
         for (uint32_t* ptr = (uint32_t*) res->data; ptr < (uint32_t*) res->data + c.n_words_per_block; ptr++) {
             if (c.blocks == l2cache.blocks) {
-                SET_BIGWORD(mem, faddr, *ptr) // AVOID GOING OUTSIDE MEMORY
+                SET_BIGWORD(mem, faddr, *ptr) // TODO : AVOID GOING OUTSIDE MEMORY
             } else {
                 cache_update(l2cache, faddr, *ptr);
             }
@@ -175,10 +175,17 @@ struct block* cache_load(struct cache c, uint32_t addr) {
 
     // Update block
     // Read from lower memory (L2-cache or main memory)
+    #ifdef DEBUG
+    if(c.blocks == l2cache.blocks) {
+        D printf("DEBUG : Cache : Loading from MEM into L2-cache\n");
+    } else {
+        D printf("DEBUG : Cache : Loading from L2-cache into L1-cache\n");
+    }
+    #endif
     uint32_t *p = (uint32_t*) res->data;
     for (uint32_t i = 0; i < c.n_words_per_block; i++) {
         if (c.blocks == l2cache.blocks) {
-            *p = GET_BIGWORD(mem, addr); // AVOID GOING OUTSIDE MEMORY E.G [X|OUT|OUT|OUT] LOAD WORD AT X
+            *p = GET_BIGWORD(mem, addr); // TODO : AVOID GOING OUTSIDE MEMORY E.G [X|OUT|OUT|OUT] LOAD WORD AT X
         } else {
             *p = cache_get(l2cache, addr);
         }
@@ -197,6 +204,7 @@ struct block* cache_load(struct cache c, uint32_t addr) {
 
 // Read from instruction cache
 int inst_read(uint32_t addr, uint32_t *read_inst) {
+    D printf("DEBUG : Cache : Reading instruction from cache, Addr = [0x%x]\n", addr);
     if (addr >= END_OF_MEM || addr <= MIPS_RESERVE) {
         D printf("DEBUG   - Cache : WARNING : Reading instruction from outside memory [0x%x]\n", addr);
         return ERROR_INVALID_MEM_ADDR;
@@ -209,6 +217,7 @@ int inst_read(uint32_t addr, uint32_t *read_inst) {
 
 // Read from data cache
 int data_read(uint32_t addr, uint32_t *read_data) {
+    D printf("DEBUG : Cache : Reading instruction from cache, Addr = [0x%x]\n", addr);
     if (addr >= END_OF_MEM || addr <= MIPS_RESERVE) {
         D printf("DEBUG   - Cache : WARNING : Reading instruction from outside memory [0x%x]\n", addr);
         return ERROR_INVALID_MEM_ADDR;
@@ -221,6 +230,7 @@ int data_read(uint32_t addr, uint32_t *read_data) {
 
 // Write to data cache
 int data_write(uint32_t addr, uint32_t data) {
+    D printf("DEBUG : Cache : Reading instruction from cache, Addr = [0x%x]\n", addr);
     if (addr >= END_OF_MEM || addr <= MIPS_RESERVE) {
         D printf("DEBUG   - Cache : WARNING : Writing to data outside memory [0x%x]\n", addr);
         return ERROR_INVALID_MEM_ADDR;
