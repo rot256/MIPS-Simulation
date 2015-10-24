@@ -1,2 +1,2 @@
 set disassembly-flavor intel
-run default.cfg tests/sw-lw.elf
+run default.cfg tests/loadthenbranch.elf

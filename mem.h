@@ -21,7 +21,7 @@ struct block {
     bool modified;       // Block modified?
     uint32_t age;        // When was the block inserted (higher = older)
     uint32_t tag;        // Upper part of address
-    unsigned char *data; // Data segment of block
+    uint32_t *data;      // Data segment of block
 };
 
 // Caches

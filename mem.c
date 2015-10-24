@@ -25,10 +25,13 @@ static unsigned char mem[MEMSZ];
 // Tag value
 #define GET_TAG(c, addr) (RM_SET(c, RM_BLOCK(c, RM_BYTE(addr))))
 
-//
+// Tag | Set | Word offset (in block) | Byte offset (in word)
 
 // Total bytes in cache
 #define N_BYTES(c) (c.n_sets * c.n_blocks_per_set * c.n_words_per_block * sizeof(uint32_t))
+
+// First address in block with tag and set
+#define FADDR(c, tag, set) (((tag << log2n(c.n_sets) | set ) << log2n(c.n_words_per_block)) << 2)
 
 struct block* cache_load(struct cache c, uint32_t addr);
 
@@ -55,6 +58,30 @@ static inline uint32_t log2n(uint32_t a) {
    }
    */
 
+
+
+
+static void print_cache(struct cache c) {
+    printf("Cache blocks : %p\n", (void*) c.blocks);
+    for (uint32_t s = 0; s < c.n_sets; s++) {
+        printf("Set %d :\n", s);
+        for(uint32_t b = 0; b < c.n_blocks_per_set; b++) {
+            struct block res = c.blocks[b + s*c.n_blocks_per_set];
+            uint32_t faddr = FADDR(c, res.tag, s);
+            if(!res.valid) continue;
+            printf(" Block %d :\n", b);
+            printf("  Valid    = [%d]\n", res.valid);
+            printf("  Modified = [%d]\n", res.modified);
+            printf("  Words:\n");
+            for(uint32_t w = 0; w < c.n_words_per_block; w++) {
+                printf("   [%2d] = 0x%08x [0x%x]\n", w, *(((uint32_t*) res.data) + w), faddr);
+                faddr += 4;
+            }
+        }
+    }
+}
+
+
 // Setup memory (dumb wrapper)
 int mem_init(const char *path, uint32_t *PC) {
     return elf_dump(path, PC, &mem[0], MEMSZ);
@@ -74,12 +101,13 @@ int cache_init(struct cache *c) {
     size_t block_cnt = c->n_sets * c->n_blocks_per_set;
     c->blocks = (struct block*) calloc(block_cnt, sizeof(struct block));
     for(size_t i = 0; i < block_cnt; i++) {
-        (c->blocks[i]).data = (unsigned char*) malloc(N_BYTES((*c)));
+        (c->blocks[i]).data = (uint32_t *) malloc(N_BYTES((*c)));
     }
 
     return 0;
 }
 
+// Tag | Set index | Word index | Byte index (2 bit)
 // Finds block of address (if in cache)
 struct block* cache_find_block(struct cache c, uint32_t addr) {
     struct block *res = NULL;
@@ -97,8 +125,10 @@ struct block* cache_find_block(struct cache c, uint32_t addr) {
 struct block* cache_find_oldest(struct cache c, uint32_t addr) {
     struct block *res = NULL;
     size_t base = GET_SET(c, addr) * c.n_blocks_per_set;
+    D printf("DEBUG : SET %08x ADDR 0x%08x\n", GET_SET(c, addr), addr);
     for(struct block *b = c.blocks + base; b < c.blocks + c.n_blocks_per_set + base; b++) {
-        if ((!b->valid) || !res || (b->age > res->age)) res = b;
+        if (!b->valid) return b;
+        if (!res || (b->age > res->age)) res = b;
     }
     return res;
 }
@@ -114,7 +144,12 @@ uint32_t cache_get(struct cache c, uint32_t addr) {
         D printf("DEBUG : Cache : We have a hit scotty!\n");
         hits++;
     }
-    memcpy(&val, res->data + GET_BLOCK(c, addr), sizeof(uint32_t)); // TODO : Load half-words and bytes also
+    // memcpy(&val, res->data + GET_BLOCK(c, addr) * sizeof(uint32_t), sizeof(uint32_t));
+    // memcpy(&val, res->data + GET_BLOCK(c, addr), sizeof(uint32_t)); // TODO : Load half-words and bytes also
+    val = *(res->data + GET_BLOCK(c, addr));
+
+    D printf("LOADED 0x%08x : %p\n", val, (void*) c.blocks);
+    D print_cache(c);;
     res->age = 0;
     return val;
 }
@@ -145,24 +180,12 @@ struct block* cache_load(struct cache c, uint32_t addr) {
     D printf("DEBUG   - Modified = [%d]\n", res->modified);
     D printf("DEBUG   - Age      = [%u]\n", res->age);
     D printf("DEBUG   - Tag      = [0x%x]\n", res->tag);
-    D printf("DEBUG   - Data At  = [%p]\n", res->data);
+    D printf("DEBUG   - Data At  = [%p]\n", (void*) res->data);
 
     // Check if modified
     if(res->valid && res->modified) {
         D printf("DEBUG   - Writing changes to lower memory\n");
-
-        // Find first address in block
-        // Addr = [Tag | Set Offset | Block Offset  | Byte Index]
-        uint32_t faddr = 0;
-        faddr |= res->tag;
-        faddr <<= log2n(c.n_sets);
-        faddr |= GET_SET(c, addr);
-        faddr <<= log2n(c.n_blocks_per_set);
-        faddr |= GET_BLOCK(c, addr);
-        faddr <<= log2n(c.n_words_per_block);
-        faddr <<= 2;
-
-        // Write to lower memory (L2-cache or main memory)
+        uint32_t faddr = FADDR(c, res->tag, GET_SET(c, addr));
         for (uint32_t* ptr = (uint32_t*) res->data; ptr < (uint32_t*) res->data + c.n_words_per_block; ptr++) {
             if (c.blocks == l2cache.blocks) {
                 SET_BIGWORD(mem, faddr, *ptr) // TODO : AVOID GOING OUTSIDE MEMORY
@@ -173,8 +196,11 @@ struct block* cache_load(struct cache c, uint32_t addr) {
         }
     }
 
-    // Update block
-    // Read from lower memory (L2-cache or main memory)
+    // Update block metadata
+    res->valid = true;
+    res->modified = false;
+    res->age = 0;
+    res->tag = GET_TAG(c, addr);
     #ifdef DEBUG
     if(c.blocks == l2cache.blocks) {
         D printf("DEBUG : Cache : Loading from MEM into L2-cache\n");
@@ -182,19 +208,21 @@ struct block* cache_load(struct cache c, uint32_t addr) {
         D printf("DEBUG : Cache : Loading from L2-cache into L1-cache\n");
     }
     #endif
+
+    // Read from lower memory (L2-cache or main memory)
     uint32_t *p = (uint32_t*) res->data;
+    uint32_t faddr = FADDR(c, res->tag, GET_SET(c, addr));
     for (uint32_t i = 0; i < c.n_words_per_block; i++) {
         if (c.blocks == l2cache.blocks) {
-            *p = GET_BIGWORD(mem, addr); // TODO : AVOID GOING OUTSIDE MEMORY E.G [X|OUT|OUT|OUT] LOAD WORD AT X
+            *p = GET_BIGWORD(mem, faddr); // TODO : AVOID GOING OUTSIDE MEMORY E.G [X|OUT|OUT|OUT] LOAD WORD AT X
+            D printf("DEBUG : Cache : Loaded word [0x%08x] from lower cache\n", *p);
         } else {
-            *p = cache_get(l2cache, addr);
+            D printf("DEBUG : Cache : Load addr = [0x%08x]\n", addr);
+            *p = cache_get(l2cache, faddr);
         }
-        addr += 4;
+        faddr += 4;
         p++;
     }
-    res->valid = true;
-    res->modified = false;
-    res->age = 0;
 
     // Update misses
     misses++;
@@ -212,6 +240,11 @@ int inst_read(uint32_t addr, uint32_t *read_inst) {
 
     // *read_inst = GET_BIGWORD(mem, addr);
     *read_inst = cache_get(icache, addr);
+    D printf("Instruction cache:\n");
+    D print_cache(icache);
+    D printf("\n\n\n\n\n\n");
+    D printf("L2 cache:\n");
+    D print_cache(l2cache);
     return 0;
 }
 
