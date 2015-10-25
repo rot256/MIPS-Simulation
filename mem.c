@@ -81,11 +81,14 @@ int cache_init(struct cache *c) {
     // Allocate memory
     size_t data_size = c->n_blocks_per_set * c->n_words_per_block * sizeof(uint32_t);;
     size_t block_cnt = c->n_sets * c->n_blocks_per_set;
+    D printf("DEBUG : Cache : Allocating memory:\n");
+    D printf("DEBUG   - Blocks : %zu bytes\n", sizeof(struct block) * block_cnt);
+    D printf("DEBUG   - Data   : %zu bytes\n", data_size * block_cnt);
+    D printf("DEBUG   - Total  : %zu bytes\n", sizeof(struct block) * block_cnt + data_size * block_cnt);
     c->blocks = (struct block*) calloc(block_cnt, sizeof(struct block));
     for(size_t i = 0; i < block_cnt; i++) {
         (c->blocks[i]).data = (uint32_t *) malloc(data_size);
         if(c->blocks[i].data == NULL) return ERROR_MEMORY_ERROR;
-        D printf("SETUP %p ALLOC %zu\n", (void*) (c->blocks[i]).data, data_size);
     }
 
     // Set statistics

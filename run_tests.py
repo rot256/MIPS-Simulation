@@ -106,7 +106,7 @@ with open('dummy.cfg.old', 'w') as f:
 
     def get_mem():
         def get_val():
-            return 1 << random.randint(1, 9)
+            return 1 << random.randint(1, 10)
         return ','.join([str(get_val()), str(get_val()), str(get_val())])
 
     for _ in range(3):

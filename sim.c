@@ -90,16 +90,26 @@ int main(int argc, char* argv[]) {
     if (argc != 3) {
         printf("Usage:\n");
         printf("%s config_file mips_elf_file\n", argv[0]);
-        printf("Error codes:\n");
-        printf("IO ERROR       : %4d\n", ERROR_IO_ERROR);
-        printf("INVALID CONFIG : %4d\n", ERROR_INVALID_CONFIG);
         exit(-1);
     }
 
     // Read config file and print inital status
     ret = read_config(argv[1]);
     if (ret != 0) {
-        printf("Failed to load config, with code %d\n", ret);
+        printf("Failed to load config, failed with:\n");
+        switch(ret) {
+            case ERROR_INVALID_CACHE_SIZE:
+                printf("Invalid cache size\n");
+                break;
+            case ERROR_MEMORY_ERROR:
+                printf("Memory error : Failed to allocate cache (time for an upgrade?)\n");
+                break;
+            case ERROR_INVALID_CONFIG:
+                printf("Failed to parse config (invalid format)\n");
+                break;
+            default:
+                printf("Unknown error (code = %d)\n", ret);
+        }
         exit(ret);
     }
 
