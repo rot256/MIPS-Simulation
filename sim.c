@@ -11,6 +11,9 @@
 void print_status() {
     printf("Executed %zu instruction(s).\n", instr_cnt);
     printf("%zu cycle(s) elapsed.\n", cycles);
+    printf("icache hits: %zu, misses: %zu.\n", icache.hits, icache.misses);
+    printf("dcache hits: %zu, misses: %zu.\n", dcache.hits, dcache.misses);
+    printf("l2cache hits: %zu, misses: %zu.\n", l2cache.hits, l2cache.misses);
     printf("pc = 0x%x\n", PC);
     printf("at = 0x%x\n", regs[r_at]);
     printf("v0 = 0x%x\n", regs[r_v0]);
@@ -24,8 +27,6 @@ void print_all_registers() {
     for (int i = 0; i < 4; i++) printf("a%d = 0x%x\n", i, regs[i+16]);
     for (int i = 0; i < 8; i++) printf("s%d = 0x%x\n", i, regs[i+16]);
 }
-
-
 
 // Read config file stream
 int read_config_stream(FILE* f) {

@@ -10,9 +10,11 @@
 #define END_OF_MEM (MEMSZ + MIPS_RESERVE)
 
 struct cache {
-    uint32_t n_sets;            // Number of sets
-    uint32_t n_blocks_per_set;  //
-    uint32_t n_words_per_block; //
+    size_t hits;                // Cache hits
+    size_t misses;              // Cache misses
+    uint32_t n_sets;            // Number of sets in cache
+    uint32_t n_blocks_per_set;  // Number of block in set
+    uint32_t n_words_per_block; // Number of words per block
     struct block *blocks;
 };
 

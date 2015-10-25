@@ -7,6 +7,7 @@ import re
 import sys
 import time
 import glob
+import random
 
 class IPopen(subprocess.Popen):
     def __init__(self, *args, **kwargs):
@@ -70,13 +71,13 @@ def test():
             'dummy.cfg.old',
             binary
         ]
-        prc = IPopen(args, prompts=['Press enter', 'Failed', 'ra = '])
-        text = prc.correspond('\n'*10)
+        prc = IPopen(args, prompts=['Press enter', 'Failed', 'ra = ', 'terminated'])
+        text = prc.correspond('\n'*20)
         out = text
         while 'Press enter' in text:
             if 'Press enter' in text:
                 try:
-                    text = prc.correspond('\n'*10)
+                    text = prc.correspond('\n'*20)
                     out += text
                 except IOError:
                     break
@@ -88,11 +89,12 @@ def test():
                 print 'See log.txt for full output'
                 with open('log.txt', 'w') as f:
                     f.write(out)
-                return
+                return False
         print ''
 
     print 'All tests passed'
     print 'You are winner!!!'
+    return True
 
 if len(sys.argv) != 3:
     print 'Usage: ' + sys.argv[0] + ' SimulatorPath TestFolder'
@@ -101,9 +103,19 @@ if len(sys.argv) != 3:
 with open('dummy.cfg.old', 'w') as f:
     for _ in range(8):
         f.write('0\n')
-    f.write('8,8,8\n')
-    f.write('8,8,8\n')
-    f.write('8,8,8\n')
 
-test()
-os.remove('dummy.cfg.old')
+    def get_mem():
+        def get_val():
+            return 1 << random.randint(1, 9)
+        return ','.join([str(get_val()), str(get_val()), str(get_val())])
+
+    for _ in range(3):
+        f.write(get_mem() + '\n')
+
+
+    # f.write('8,8,8\n')
+    # f.write('8,8,8\n')
+    # f.write('8,8,8\n')
+
+if test():
+    os.remove('dummy.cfg.old')

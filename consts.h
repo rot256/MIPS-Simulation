@@ -5,7 +5,7 @@
 #define CONSTS_H
 
 // Debugging
-#define DEBUG
+// #define DEBUG
 #ifdef DEBUG
 #define D
 #else
@@ -27,6 +27,8 @@
 #define ERROR_OVERFLOW           -6
 #define ERROR_INVALID_MEM_ADDR   -7
 #define ERROR_INVALID_CACHE_SIZE -8
+#define ERROR_MEMORY_ERROR       -9
+
 // Index of special registers
 #define r_at 1
 #define r_v0 2
