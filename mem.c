@@ -107,6 +107,7 @@ struct block* cache_find_block(struct cache *c, uint32_t addr) {
         } else if(b->age < 0xFFFFFFFF) b->age ++;
         b++;
     }
+    if(res) res->age = 0;
     return res;
 }
 
@@ -142,7 +143,6 @@ uint32_t cache_get(struct cache *c, uint32_t addr) {
         c->hits++;
         D printf("DEBUG : Cache : Hit : %p\n", (void*) c->blocks);
     }
-    res->age = 0;
     return *(res->data + GET_BLOCK((*c), addr));
 }
 
@@ -157,7 +157,6 @@ struct block* cache_update(struct cache *c, uint32_t addr, uint32_t val) {
         c->hits++;
         D printf("DEBUG : Cache : Hit : %p\n", (void*) c->blocks);
     }
-    res->age = 0;
     res->modified = true;
     *(res->data + GET_BLOCK((*c), addr)) = val;
     return res;
@@ -193,9 +192,9 @@ struct block* cache_load(struct cache *c, uint32_t addr) {
     }
 
     // Update block metadata
+    res->age = 0;
     res->valid = true;
     res->modified = false;
-    res->age = 0;
     res->tag = GET_TAG((*c), addr);
     #ifdef DEBUG
     if(c->blocks == l2cache.blocks) {
@@ -225,11 +224,6 @@ struct block* cache_load(struct cache *c, uint32_t addr) {
     // Update cycles and misses
     c->misses++;
     cycles += (c->blocks == l2cache.blocks ? 400 : 20);
-
-    // DEBUG : TODO
-    if (c->blocks == l2cache.blocks && 1 == 0) {
-        print_cache((*c));
-    }
     return res;
 }
 
@@ -243,7 +237,6 @@ int inst_read(uint32_t addr, uint32_t *read_inst) {
     // *read_inst = GET_BIGWORD(mem, addr);
     *read_inst = cache_get(&icache, addr);
     D print_cache(icache);
-    // D print_cache(l2cache);
     return 0;
 }
 

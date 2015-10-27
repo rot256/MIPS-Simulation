@@ -13,6 +13,27 @@
 
 ## Design choices
 
+### Caching
+
+When a cache miss occures the cache will attempt to load the requested memory either from the lower cache (L2) or from main memory.
+Thus if an L1 cache miss triggers another cache miss in the L2 cache the cost of both will be added to "cycles" and it will count as a miss in both caches.
+
+The cost of a cache-miss is:
+
+- 20 Cycles for L1 cache misses (instruction/data cache)
+- 400 Cycles for L2 cache misses
+
+Do not expect the instruction cache and data cache to be coherent e.g writing mips code which modifies itself will not work in this version :(
+
+Blocks are replaced using a LRU algorithm.
+
+1. Every block is assigned an age staring at 0
+2. Every time a set is searched for a block, the age of every block in the set will be increased by 1
+3. The age is reset when a block is accessed
+
+When setting the cache size please keep in mind how much memory you have available.
+Allocating a huge (~1 GB) cache will probably lead to unpredicatable behavior (we have no tests of this), we also do not limit the cache size to 2^32 bytes (since you can have any amount of blocks).
+
 ### Overflow detection
 
 ADD and SUB implements overflow detection, if an overflow in encountered in either of these instructions the program terminates with an error.
@@ -34,8 +55,8 @@ Another side effect of this design is that the edge case for JAL is avoided:
 
 Since we intrepid JR in EX (to separate I-Type and R-Type completely).
 
-Handling branches in ID does have one major drawback, if the branch depends on the instructions immediately preceding it we must bubble. 
-When the branch instruction is in ID stage the result it depends on will be in EX, we can not forward - for this would mean going backwards in time 
+Handling branches in ID does have one major drawback, if the branch depends on the instructions immediately preceding it we must bubble.
+When the branch instruction is in ID stage the result it depends on will be in EX, we can not forward - for this would mean going backwards in time
 (the result will be available when the current cycle has completed).
 We handle this by inserting a nop in IF when we detect this problem - there may be a smarter way to do this.
 
@@ -53,5 +74,5 @@ Some of the things we also test for are:
 * We test whether instructions in the branch delay slot, gets correctly executed.
 * We test if the basic instructions works as intended
 
-To be able to test more effectively we also. We made a python script to run our tests automatic - it's not beautiful, it's not flawless but it gets the job done. 
+To be able to test more effectively we also. We made a python script to run our tests automatic - it's not beautiful, it's not flawless but it gets the job done.
 It works by comparing the post conditions in our assembly file. To the output of our simulator.

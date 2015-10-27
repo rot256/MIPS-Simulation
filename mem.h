@@ -5,7 +5,6 @@
 #ifndef MEM_H
 #define MEM_H
 
-// You win, we make it static
 #define MEMSZ (640 * KB)
 #define END_OF_MEM (MEMSZ + MIPS_RESERVE)
 
