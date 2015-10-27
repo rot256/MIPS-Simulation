@@ -14,8 +14,8 @@ static struct preg_mem_wb  mem_wb;
  */
 
 static bool flush;              // Signal IF to fetch a NOP
-static bool jump;               // Control signal to PC mux (left) (TODO : Rename)
-static uint32_t jump_target;    // Jump address bus (TODO : Rename)
+static bool jump;               // Control signal to PC mux (left)
+static uint32_t jump_target;    // Jump address bus
 
 // Run cycle
 int cycle() {
@@ -229,10 +229,10 @@ int interp_control() {
             id_exe.reg_write = true;
             id_exe.mem_to_reg = false;              // We want the output of the ALU
 
-            // Insert raw immidate into RT (kinda hackish)
-            id_exe.alu_src = false;                 // Source is imm (but not sign extended)
-            id_exe.rt_value = GET_IMM(if_id.inst);  // Raw immidate
-            id_exe.rt = 0;                          // Avoid hazard detection fucking us over
+            // Insert lower 16 bits of immediate into RT
+            id_exe.alu_src = false;
+            id_exe.rt_value = id_exe.sign_ext_imm & LS_16B;
+            id_exe.rt = 0;
 
             id_exe.funct = FUNCT_AND;               // Bitwise AND
             id_exe.reg_dst = GET_RT(if_id.inst);    // Destination is in RT
@@ -246,10 +246,10 @@ int interp_control() {
             id_exe.reg_write = true;
             id_exe.mem_to_reg = false;              // We want the output of the ALU
 
-            // Insert raw immidate into RT (kinda hackish)
-            id_exe.alu_src = false;                 // Source is imm (but not sign extended)
-            id_exe.rt_value = GET_IMM(if_id.inst);  // Raw immidate
-            id_exe.rt = 0;                          // Avoid hazard detection fucking us over
+            // Insert lower 16 bits of immediate into RT
+            id_exe.alu_src = false;
+            id_exe.rt_value = id_exe.sign_ext_imm & LS_16B;
+            id_exe.rt = 0;
 
             id_exe.funct = FUNCT_OR;                // Bitwise OR
             id_exe.reg_dst = GET_RT(if_id.inst);    // Destination is in RT
